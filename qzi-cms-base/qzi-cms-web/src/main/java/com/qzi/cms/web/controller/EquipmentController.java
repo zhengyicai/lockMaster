@@ -8,10 +8,17 @@
 package com.qzi.cms.web.controller;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.qzi.cms.common.po.UseCommunityPo;
 import com.qzi.cms.common.po.UseEquipmentNowStatePo;
 import com.qzi.cms.common.po.UseEquipmentPortPo;
+import com.qzi.cms.common.po.UseUnlockEquRecordPo;
 import com.qzi.cms.common.util.ToolUtils;
 import com.qzi.cms.common.vo.CommunityAdminVo;
 import com.qzi.cms.common.vo.UseLockRecordVo;
@@ -19,11 +26,11 @@ import com.qzi.cms.server.mapper.UseEquipmentNowStateMapper;
 import com.qzi.cms.server.mapper.UseEquipmentPortMapper;
 import com.qzi.cms.server.service.web.CommunityService;
 import com.qzi.cms.server.service.web.WebLockRecordService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
+import org.springframework.web.bind.annotation.*;
 
 import com.qzi.cms.common.annotation.SystemControllerLog;
 import com.qzi.cms.common.enums.RespCodeEnum;
@@ -33,9 +40,12 @@ import com.qzi.cms.common.resp.RespBody;
 import com.qzi.cms.common.util.LogUtils;
 import com.qzi.cms.common.vo.UseEquipmentVo;
 import com.qzi.cms.server.service.web.EquipmentService;
-
+import org.springframework.web.multipart.MultipartFile;
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+
 
 /**
  * 设备管理控制器
@@ -55,6 +65,9 @@ public class EquipmentController {
 
 	@Resource
 	private WebLockRecordService webLockRecordService;
+
+
+	private String imagepath = "/data/page/uploadImages/";
 
 
 
@@ -183,7 +196,108 @@ public class EquipmentController {
 		}
 		return respBody;
 	}
-	
+
+
+
+	@ResponseBody
+	@RequestMapping(value = "/addUpload",method = RequestMethod.POST)
+	public RespBody addEquRecord(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IllegalStateException, IOException {
+		RespBody respBody=new RespBody();
+
+
+
+		if (file!=null) {// 判断上传的文件是否为空
+			String path=null;// 文件路径
+			String type=null;// 文件类型
+			String fileName=file.getOriginalFilename();// 文件原名称
+			System.out.println("上传的文件原名称:"+fileName);
+			// 判断文件类型
+			type=fileName.indexOf(".")!=-1?fileName.substring(fileName.lastIndexOf(".")+1, fileName.length()):null;
+			if (type!=null) {// 判断文件类型是否为空
+				if ("XML".equals(type.toUpperCase())||"xml".equals(type.toUpperCase())) {
+
+
+
+
+					// 项目在容器中实际发布运行的根路径
+					String realPath=request.getSession().getServletContext().getRealPath("/");
+
+					// 自定义的文件名称
+					String trueFileName=String.valueOf(System.currentTimeMillis())+"."+type.toUpperCase();
+					// 设置存放图片文件的路径
+
+
+
+					//path = "/data/page/uploadImages/"+po.getUserName()+"/"+/*System.getProperty("file.separator")+*/trueFileName;
+					path = realPath+/*System.getProperty("file.separator")+*/trueFileName;
+
+
+					//保存文件
+					file.transferTo(new File(path));
+
+					//liunx密令
+					// Runtime.getRuntime().exec("chmod 777 -R " +"/data/page/uploadImages/"+trueFileName);
+
+
+
+					SAXReader reader = new SAXReader();
+					File file1 = new File(path);
+					Document document = null;
+					try {
+						document = reader.read(file1);
+						Element root = document.getRootElement();
+						List<Element> childElements = root.elements();
+						for (Element child : childElements) {
+
+
+
+
+							if("item".equals(child.getName())){
+								//已知属性名情况下
+								System.out.println("name: " + child.elementText("name"));
+								System.out.println("ename: " + child.elementText("ename"));
+								System.out.println("code" + child.elementText("code"));
+								System.out.println("ip" + child.elementText("ip"));
+								System.out.println("gate" + child.elementText("gate"));
+								System.out.println("mask" + child.elementText("mask"));
+								//这行是为了格式化美观而存在
+								System.out.println();
+
+							}
+
+						}
+					} catch (DocumentException e) {
+						e.printStackTrace();
+					}
+
+
+
+
+
+
+						System.out.println("存放图片文件的路径:"+path);
+
+					respBody.add(RespCodeEnum.SUCCESS.getCode(), "添加成功",trueFileName);
+				}else {
+					System.out.println("不是我们想要的文件类型,请按要求重新上传");
+					respBody.add(RespCodeEnum.ERROR.getCode(), "文件类型不对，请重新上传");
+					return respBody;
+				}
+			}else {
+				System.out.println("文件类型为空");
+				respBody.add(RespCodeEnum.ERROR.getCode(), "文件类型为空");
+				return respBody;
+			}
+		}else {
+			System.out.println("没有找到相对应的文件");
+			respBody.add(RespCodeEnum.ERROR.getCode(), "没有找到相对应的文件");
+			return respBody;
+		}
+		return respBody;
+	}
+
+
+
 	@PostMapping("/delete")
 	@SystemControllerLog(description="删除设备")
 	public RespBody delete(@RequestBody UseEquipmentVo equipmentVo){

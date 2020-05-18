@@ -70,6 +70,13 @@
 	<!-- 分页拦截器 -->
 	<bean name="paginationInterceptor" class="com.qzi.cms.server.interceptor.PageInterceptor"></bean>
 
+
+	<bean id="multipartResolver"  class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="defaultEncoding" value="UTF-8" />
+		<!-- 指定所上传文件的总大小,单位字节。注意maxUploadSize属性的限制不是针对单个文件，而是所有文件的容量之和 -->
+		<property name="maxUploadSize" value="1024000000" />
+	</bean>
+
 	<!-- 配置sqlSessionFactory -->
 	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
 		<property name="dataSource" ref="dataSource"></property>
@@ -142,7 +149,7 @@
 		<constructor-arg index="1" value="${redis.host}" type="java.lang.String" />
 		<constructor-arg index="2" value="${redis.port}" type="int" />
 		<constructor-arg index="3" value="${redis.timeout}" type="int" />
-		<!--<constructor-arg index="4" type="java.lang.String"  value="${redis.password}"/>-->
+		<constructor-arg index="4" type="java.lang.String"  value="${redis.password}"/>
 	</bean>
 	
 		<bean id="captchaProducer" class="com.google.code.kaptcha.impl.DefaultKaptcha">
