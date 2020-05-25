@@ -170,7 +170,7 @@ public class EquipmentServiceImpl implements EquipmentService {
 
 
 
-		equipmentPo.setEquNo(compo.getCommunityNo()+equipmentVo.getEquNo());
+//		equipmentPo.setEquNo(compo.getCommunityNo()+equipmentVo.getEquNo());
 		equipmentMapper.insert(equipmentPo);
 
 		UseEquipmentNowStatePo nowStatePo  = new UseEquipmentNowStatePo();
@@ -202,6 +202,65 @@ public class EquipmentServiceImpl implements EquipmentService {
 	}
 
 	@Override
+	public void add(UseEquipmentPo po) throws Exception {
+
+
+
+
+
+		String equIe = ToolUtils.getUUID();
+
+
+		UseEquipmentPo po1 = new UseEquipmentPo();
+		po1.setId(equIe);
+		po1.setEquipmentId(po.getEquipmentId());
+		po1.setEquipmentName(po.getEquipmentName());
+		po1.setCommunityId(po.getCommunityId());
+		po1.setIp(po.getIp());
+		po1.setEname(po.getEname());
+		po1.setGate(po.getGate());
+		po1.setMask(po.getMask());
+
+		po1.setBuildingId("");
+		po1.setCreateTime(new Date());
+		po1.setUnitName(0);
+		po1.setClientNumber("");
+		po1.setClientPwd("");
+
+
+
+
+		po1.setEquipmentType("");
+		po1.setState("");
+		po1.setUpdateTime(new Date());
+		po1.setEquCode(po.getEquCode());
+		po1.setEquId(po.getEquId());
+
+		equipmentMapper.insert(po1);
+
+		UseEquipmentNowStatePo nowStatePo  = new UseEquipmentNowStatePo();
+		UseEquipmentPortPo portPo = new UseEquipmentPortPo();
+		//初始化设备的状态
+		nowStatePo.setId(ToolUtils.getUUID());
+		nowStatePo.setEquipmentId(equIe);
+		nowStatePo.setEquipmentNo(po.getEquipmentId());
+		nowStatePo.setState("20");
+		nowStatePo.setUpdateTime(new Date());
+		useEquipmentNowStateMapper.insert(nowStatePo);
+
+
+
+		//初始化设备的udp端口
+		portPo.setId(ToolUtils.getUUID());
+		portPo.setCreateTime(new Date());
+		portPo.setEquipmentId(equIe);
+		portPo.setEquipmentNo(po.getEquipmentId());
+		portPo.setIps("0.0.0.0");
+		portPo.setPort("8000");
+		useEquipmentPortMapper.insert(portPo);
+	}
+
+	@Override
 	@Transactional(rollbackFor=Exception.class)
 	public void delete(UseEquipmentVo equipmentVo) throws Exception {
 		//注销云之讯账户
@@ -223,8 +282,8 @@ public class EquipmentServiceImpl implements EquipmentService {
 		equipmentMapper.updateByPrimaryKey(equipmentPo);
 
 		//修改设备与房卡的绑定状态
-		useUserCardEquipmentMapper.updateAllUserCardEquipment(equipmentVo.getEquCardState(),equipmentVo.getId());
-		useCardEquipmentMapper.updateAllCardEquipment(equipmentVo.getEquCardState(),equipmentVo.getId());
+		//useUserCardEquipmentMapper.updateAllUserCardEquipment(equipmentVo.getEquCardState(),equipmentVo.getId());
+		//useCardEquipmentMapper.updateAllCardEquipment(equipmentVo.getEquCardState(),equipmentVo.getId());
 	}
 
 	@Override

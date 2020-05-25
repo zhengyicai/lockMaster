@@ -15,13 +15,14 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.qzi.cms.common.po.UseCommunityPo;
-import com.qzi.cms.common.po.UseEquipmentNowStatePo;
-import com.qzi.cms.common.po.UseEquipmentPortPo;
-import com.qzi.cms.common.po.UseUnlockEquRecordPo;
+import com.qzi.cms.common.po.*;
+import com.qzi.cms.common.service.RedisService;
 import com.qzi.cms.common.util.ToolUtils;
+import com.qzi.cms.common.util.YBBeanUtils;
 import com.qzi.cms.common.vo.CommunityAdminVo;
+import com.qzi.cms.common.vo.SysUserVo;
 import com.qzi.cms.common.vo.UseLockRecordVo;
+import com.qzi.cms.server.mapper.UseEquipmentMapper;
 import com.qzi.cms.server.mapper.UseEquipmentNowStateMapper;
 import com.qzi.cms.server.mapper.UseEquipmentPortMapper;
 import com.qzi.cms.server.service.web.CommunityService;
@@ -64,17 +65,40 @@ public class EquipmentController {
 
 
 	@Resource
+	private UseEquipmentMapper useEquipmentMapper;
+
+
+	@Resource
 	private WebLockRecordService webLockRecordService;
 
 
 	private String imagepath = "/data/page/uploadImages/";
 
 
+	@Resource
+	private RedisService redisService;
+
+
 
 
 
 	@GetMapping("/findCommunitys")
-	public RespBody findCommunitys(){
+	public RespBody findCommunitys(String communityId){
+		RespBody respBody = new RespBody();
+		try {
+			//查找数据并返回
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户小区信息成功",useEquipmentMapper.selectUserAll(communityId));
+		} catch (Exception ex) {
+			respBody.add(RespCodeEnum.ERROR.getCode(), "获取用户小区信息异常");
+			LogUtils.error("获取用户小区信息异常！",ex);
+		}
+		return respBody;
+	}
+
+
+
+	@GetMapping("/findCommunitysAll")
+	public RespBody findCommunitysAll(){
 		RespBody respBody = new RespBody();
 		try {
 			//查找数据并返回
@@ -201,7 +225,7 @@ public class EquipmentController {
 
 	@ResponseBody
 	@RequestMapping(value = "/addUpload",method = RequestMethod.POST)
-	public RespBody addEquRecord(@RequestPart("file") MultipartFile file, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IllegalStateException, IOException {
+	public RespBody addEquRecord(@RequestPart("file") MultipartFile file,UseEquipmentPo useEquipmentPo, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IllegalStateException, IOException {
 		RespBody respBody=new RespBody();
 
 
@@ -247,6 +271,12 @@ public class EquipmentController {
 						document = reader.read(file1);
 						Element root = document.getRootElement();
 						List<Element> childElements = root.elements();
+
+						//获取当前用户的小区
+
+
+
+
 						for (Element child : childElements) {
 
 
@@ -261,21 +291,50 @@ public class EquipmentController {
 								System.out.println("gate" + child.elementText("gate"));
 								System.out.println("mask" + child.elementText("mask"));
 								//这行是为了格式化美观而存在
-								System.out.println();
+
+								UseEquipmentPo po = new UseEquipmentPo();
+								po.setEquipmentId(child.elementText("code"));
+								po.setEquipmentName(child.elementText("name"));
+								po.setEname(child.elementText("ename"));
+								po.setIp(child.elementText("ip"));
+								po.setGate(child.elementText("gate"));
+								po.setMask(child.elementText("mask"));
+								po.setCommunityId(useEquipmentPo.getCommunityId());
+								po.setState("10");
+
+
+
+								if(child.elementText("code").length()==6){
+									po.setEquCode(child.elementText("code").substring(1,child.elementText("code").length()-1));
+									if("0000".equals(po.getEquCode())){
+										po.setEquId("");
+									}else{
+										po.setEquId(po.getEquCode().substring(0,3)+"栋"+po.getEquCode().substring(3,4)+"单元");
+									}
+
+								}else if(child.elementText("code").length()==11){
+									po.setEquCode(child.elementText("code").substring(1,child.elementText("code").length()-2));
+									po.setEquId(po.getEquCode().substring(0,3)+"栋"+po.getEquCode().substring(3,4)+"单元"+po.getEquCode().substring(4,8)+"房");
+								}else{
+									po.setEquCode("");
+								}
+
+								equipmentService.add(po);
+
+
+
 
 							}
 
 						}
 					} catch (DocumentException e) {
 						e.printStackTrace();
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 
 
-
-
-
-
-						System.out.println("存放图片文件的路径:"+path);
+					System.out.println("存放图片文件的路径:"+path);
 
 					respBody.add(RespCodeEnum.SUCCESS.getCode(), "添加成功",trueFileName);
 				}else {
@@ -318,11 +377,43 @@ public class EquipmentController {
 	public RespBody update(@RequestBody UseEquipmentVo equipmentVo){
 		RespBody respBody = new RespBody();
 		try {
-			equipmentService.update(equipmentVo);
+			//useEquipmentMapper
+			//equipmentService.update(equipmentVo);
 			respBody.add(RespCodeEnum.SUCCESS.getCode(), "修改设备成功");
 		} catch (Exception ex) {
 			respBody.add(RespCodeEnum.ERROR.getCode(), "修改设备失败");
 			LogUtils.error("修改设备失败！",ex);
+		}
+		return respBody;
+	}
+
+
+	@PostMapping("/updateState")
+	@SystemControllerLog(description="修改设备状态")
+	public RespBody updateState(@RequestBody UseEquipmentVo equipmentVo){
+		RespBody respBody = new RespBody();
+		try {
+			useEquipmentMapper.updateState(equipmentVo.getState(),equipmentVo.getId());
+			//equipmentService.update(equipmentVo);
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "修改设备成功");
+		} catch (Exception ex) {
+			respBody.add(RespCodeEnum.ERROR.getCode(), "修改设备失败");
+			LogUtils.error("修改设备失败！",ex);
+		}
+		return respBody;
+	}
+
+	@PostMapping("/deleteAll")
+	@SystemControllerLog(description="删除所有设备")
+	public RespBody deleteAll(@RequestBody UseEquipmentVo equipmentVo){
+		RespBody respBody = new RespBody();
+		try {
+			useEquipmentMapper.deleteAll(equipmentVo.getCommunityId());
+			//equipmentService.update(equipmentVo);
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "删除所有设备成功");
+		} catch (Exception ex) {
+			respBody.add(RespCodeEnum.ERROR.getCode(), "删除所有设备失败");
+			LogUtils.error("删除所有设备失败！",ex);
 		}
 		return respBody;
 	}

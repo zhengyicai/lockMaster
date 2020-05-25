@@ -34,6 +34,6 @@ public interface UseEquipmentNowStateMapper extends BaseMapper<UseEquipmentNowSt
 	public void update(@Param("state") String state,@Param("id") String id);
 
 
-	@Select("select * from use_equipment_nowState where equipmentNo=#{equipmentNo}")
-	public UseEquipmentNowStatePo findOne(@Param("equipmentNo") String equipmentNo);
+	@Select("select * from use_equipment_nowState where equipmentNo=#{equipmentNo} and  equipmentId=#{id}")
+	public UseEquipmentNowStatePo findOne(@Param("equipmentNo") String equipmentNo,@Param("id") String id);
 }

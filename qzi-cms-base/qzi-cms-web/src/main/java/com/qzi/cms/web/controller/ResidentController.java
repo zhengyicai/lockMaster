@@ -11,6 +11,7 @@ import javax.annotation.Resource;
 
 import com.qzi.cms.common.po.UseResidentCardPo;
 import com.qzi.cms.common.po.UseResidentEquipmentPo;
+import com.qzi.cms.common.po.UseResidentPo;
 import com.qzi.cms.common.util.ToolUtils;
 import com.qzi.cms.common.vo.TreeVo;
 import com.qzi.cms.server.mapper.*;
@@ -34,7 +35,12 @@ import com.qzi.cms.common.vo.UseResidentRoomVo;
 import com.qzi.cms.common.vo.UseResidentVo;
 import com.qzi.cms.server.service.web.ResidentService;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 /**
@@ -218,6 +224,53 @@ public class ResidentController {
 			respBody.add(RespCodeEnum.SUCCESS.getCode(), "住户数据保存成功");
 		} catch (CommException ex) {
 			respBody.add(RespCodeEnum.ERROR.getCode(), ex.getMessage());
+		} catch (Exception ex) {
+			respBody.add(RespCodeEnum.ERROR.getCode(), "住户据保存失败");
+			LogUtils.error("住户据保存失败！",ex);
+		}
+		return respBody;
+	}
+
+
+	/*添加用户*/
+
+	@PostMapping("/addUser")
+	@SystemControllerLog(description="新增住户信息")
+	public RespBody add(@RequestBody UseResidentPo residentPo){
+		RespBody respBody = new RespBody();
+		try {
+
+			//添加用户
+			UseResidentPo useResidentPo = new UseResidentPo();
+			String id = ToolUtils.getUUID();
+			useResidentPo.setId(id);
+			useResidentPo.setWxId("");
+			useResidentPo.setCreateTime(new Date());
+			useResidentPo.setFingerUrl("");
+			useResidentPo.setIdentityId("");
+			useResidentPo.setPassword(residentPo.getPassword());
+
+			DateFormat dateFormat2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			Date myDate2 = dateFormat2.parse("2099-12-31 23:59:59");
+			useResidentPo.setLastTime(myDate2);
+
+			useResidentPo.setResidentType("");
+			useResidentPo.setState("10");
+			useResidentPo.setIdentityNo("");
+			useResidentPo.setMobile(residentPo.getMobile());
+			useResidentPo.setName(residentPo.getName());
+			useResidentPo.setWxId("");
+			useResidentPo.setImgUrl("");
+			useResidentPo.setSalt("");
+			useResidentPo.setClientNumber("");
+			useResidentPo.setClientPwd("");
+			useResidentPo.setLoginToken("");
+			useResidentPo.setOpenPwd("");
+			useResidentPo.setCommunityId(residentPo.getCommunityId());
+			useResidentMapper.insert(useResidentPo);
+
+
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "住户数据保存成功");
 		} catch (Exception ex) {
 			respBody.add(RespCodeEnum.ERROR.getCode(), "住户据保存失败");
 			LogUtils.error("住户据保存失败！",ex);

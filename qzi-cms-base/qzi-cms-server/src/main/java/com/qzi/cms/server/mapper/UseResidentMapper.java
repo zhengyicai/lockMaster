@@ -9,6 +9,7 @@ package com.qzi.cms.server.mapper;
 
 import java.util.List;
 
+import com.qzi.cms.common.po.UseCommunityPo;
 import com.qzi.cms.common.vo.*;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
@@ -132,6 +133,9 @@ public interface UseResidentMapper  extends BaseMapper<UseResidentPo>{
 	public UseResidentPo findMobile(@Param("mobile") String loginName);
 
 
+	@Select("select  c.* from  use_resident r left join use_community c on c.id = r.communityId where r.mobile=#{mobile}")
+	public UseCommunityPo  findCommunity(@Param("mobile") String mobile);
+
 
 	@Select("select * from use_resident where wxId=#{wxId} limit 1")
 	public UseResidentPo findWxId(@Param("wxId") String wxId);
@@ -211,5 +215,10 @@ public interface UseResidentMapper  extends BaseMapper<UseResidentPo>{
 
 	@Update("update use_resident set createTime = now() where id= #{residentId}")
 	public void updateCreateTime(@Param("residentId") String residentId);
+
+	@Update("update use_resident set openPwd = #{openPwd} where id= #{residentId}")
+	public void openPwd(@Param("residentId") String residentId,@Param("openPwd") String openPwd);
+
+
 
 }

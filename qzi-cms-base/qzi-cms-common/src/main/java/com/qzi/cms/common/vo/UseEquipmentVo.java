@@ -135,6 +135,45 @@ public class UseEquipmentVo {
 
 	private  Integer  lastTime;
 
+
+	private String ip;
+	private String gate;
+	private String mask;
+	private String ename;
+
+
+	public String getIp() {
+		return ip;
+	}
+
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
+
+	public String getGate() {
+		return gate;
+	}
+
+	public void setGate(String gate) {
+		this.gate = gate;
+	}
+
+	public String getMask() {
+		return mask;
+	}
+
+	public void setMask(String mask) {
+		this.mask = mask;
+	}
+
+	public String getEname() {
+		return ename;
+	}
+
+	public void setEname(String ename) {
+		this.ename = ename;
+	}
+
 	public Integer getLastTime() {
 		return lastTime;
 	}

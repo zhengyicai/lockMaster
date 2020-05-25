@@ -20,7 +20,7 @@ public class UseLockRecordPo {
 
     private String communityId;
 
-    private String roomNo;
+    private String cardId;
 
     private String userId;
 
@@ -31,6 +31,71 @@ public class UseLockRecordPo {
     private String state;
 
     private String equipmentId;
+
+    private String deviceCode;
+    private String type;
+    private String result;
+    private String unlockTime;
+    private String roomNumber;
+    private String phone;
+
+    private String file;
+
+    public String getDeviceCode() {
+        return deviceCode;
+    }
+
+    public void setDeviceCode(String deviceCode) {
+        this.deviceCode = deviceCode;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public String getUnlockTime() {
+        return unlockTime;
+    }
+
+    public void setUnlockTime(String unlockTime) {
+        this.unlockTime = unlockTime;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
+    }
 
     public String getEquipmentId() {
         return equipmentId;
@@ -56,12 +121,12 @@ public class UseLockRecordPo {
         this.communityId = communityId;
     }
 
-    public String getRoomNo() {
-        return roomNo;
+    public String getCardId() {
+        return cardId;
     }
 
-    public void setRoomNo(String roomNo) {
-        this.roomNo = roomNo;
+    public void setCardId(String cardId) {
+        this.cardId = cardId;
     }
 
     public String getUserId() {

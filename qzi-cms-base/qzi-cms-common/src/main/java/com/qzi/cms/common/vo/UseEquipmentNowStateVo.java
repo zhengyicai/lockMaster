@@ -10,6 +10,15 @@ public class UseEquipmentNowStateVo {
 
     private String state;
     private String cmd;
+    private String result;
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
 
     public String getEquipmentNo() {
         return equipmentNo;

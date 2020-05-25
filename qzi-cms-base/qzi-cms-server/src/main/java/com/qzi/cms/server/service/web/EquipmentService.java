@@ -9,6 +9,7 @@ package com.qzi.cms.server.service.web;
 
 import java.util.List;
 
+import com.qzi.cms.common.po.UseEquipmentPo;
 import com.qzi.cms.common.resp.Paging;
 import com.qzi.cms.common.vo.OptionVo;
 import com.qzi.cms.common.vo.UseEquipmentVo;
@@ -64,6 +65,10 @@ public interface EquipmentService {
 	 * @param equipmentVo 设备信息
 	 */
 	public void add(UseEquipmentVo equipmentVo) throws Exception;
+
+
+
+	public void add(UseEquipmentPo po) throws  Exception;
 
 	/**
 	 * 删除设备

@@ -15,8 +15,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.qzi.cms.common.po.*;
 import com.qzi.cms.common.util.ToolUtils;
-import com.qzi.cms.common.vo.UseResidentVo;
-import com.qzi.cms.common.vo.UseUserCardVo;
+import com.qzi.cms.common.vo.*;
 import com.qzi.cms.server.mapper.*;
 import com.qzi.cms.server.service.web.CommunityService;
 import org.apache.ibatis.session.RowBounds;
@@ -33,8 +32,6 @@ import com.qzi.cms.common.service.RedisService;
 import com.qzi.cms.common.util.ConfUtils;
 import com.qzi.cms.common.util.CryptUtils;
 import com.qzi.cms.common.util.LogUtils;
-import com.qzi.cms.common.vo.SysUserVo;
-import com.qzi.cms.common.vo.UpdatePwVo;
 import com.qzi.cms.server.service.web.UserService;
 
 import java.io.IOException;
@@ -91,6 +88,12 @@ public class UserController {
 	@Resource
 	private UseResidentUnlockRecordMapper useResidentUnlockRecordMapper;
 
+	@Resource
+	private UseEquipmentMapper useEquipmentMapper;
+
+
+	@Resource
+	private UseResidentMapper useResidentMapper;
 
 
 
@@ -455,6 +458,19 @@ public class UserController {
 				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
 			}
 
+			//添加公共设备
+			List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useUserCardVo.getCommunityId());
+			for(int i = 0;i<list1.size();i++){
+				useResidentEquipmentPo.setId(ToolUtils.getUUID());
+				useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
+				useResidentEquipmentPo.setState("10");
+				useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
+				useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
+				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
+			}
+
+
+
 		}
 		return respBody;
 	}
@@ -548,27 +564,29 @@ public class UserController {
 
 
 		useResidentEquipmentMapper.deleteResident(useUserCardVo.getId(),useUserCardVo.getCommunityId());
-		if(useUserCardVo.getChoId().length>0){
 
-//
-//			if(useUserCardEquipmentMapper.selectCardId(useUserCardVo.getId())>0){
-//				respBody.add(RespCodeEnum.ERROR.getCode(), "该卡号应该绑定过设备，请先解绑");
-//				return respBody;
-//			}
+		//修改房间号
+		useResidentMapper.openPwd(useUserCardVo.getId(),useUserCardVo.getCardNo());
+		UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
 
-			//useUserCardEquipmentMapper.deleteCardId(useUserCardVo.getId());
+		useResidentEquipmentPo.setId(ToolUtils.getUUID());
+		useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
+		useResidentEquipmentPo.setState("10");
+		useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
+		useResidentEquipmentPo.setEquipmentId(useUserCardVo.getEquipmentId());
+		useResidentEquipmentMapper.insert(useResidentEquipmentPo);
 
 
-			UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
-			for(int i  = 0;i<useUserCardVo.getChoId().length;i++){
-				useResidentEquipmentPo.setId(ToolUtils.getUUID());
-				useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
-				useResidentEquipmentPo.setState("10");
-				useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
-				useResidentEquipmentPo.setEquipmentId(useUserCardVo.getChoId()[i]);
-				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
-			}
 
+		//添加公共设备
+		List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useUserCardVo.getCommunityId());
+		for(int i = 0;i<list1.size();i++){
+			useResidentEquipmentPo.setId(ToolUtils.getUUID());
+			useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
+			useResidentEquipmentPo.setState("10");
+			useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
+			useResidentEquipmentPo.setEquipmentId(useUserCardVo.getEquipmentId());
+			useResidentEquipmentMapper.insert(useResidentEquipmentPo);
 		}
 		return respBody;
 	}

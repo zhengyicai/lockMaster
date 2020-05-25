@@ -31,10 +31,6 @@ public class UseEquipmentPo {
 	private String equipmentId;
 
 
-	/**
-	 * 设备编号
-	 */
-	private String equNo;
 
 
 	/**
@@ -102,14 +98,44 @@ public class UseEquipmentPo {
 	 */
 	private String  equId;
 
+	private String ip;
+	private String gate;
+	private String mask;
+	private String ename;
 
-	public String getEquNo() {
-		return equNo;
+
+	public String getIp() {
+		return ip;
 	}
 
-	public void setEquNo(String equNo) {
-		this.equNo = equNo;
+	public void setIp(String ip) {
+		this.ip = ip;
 	}
+
+	public String getGate() {
+		return gate;
+	}
+
+	public void setGate(String gate) {
+		this.gate = gate;
+	}
+
+	public String getMask() {
+		return mask;
+	}
+
+	public void setMask(String mask) {
+		this.mask = mask;
+	}
+
+	public String getEname() {
+		return ename;
+	}
+
+	public void setEname(String ename) {
+		this.ename = ename;
+	}
+
 
 	public String getEquCode() {
 		return equCode;

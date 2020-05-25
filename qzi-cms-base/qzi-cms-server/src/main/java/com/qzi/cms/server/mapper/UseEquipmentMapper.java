@@ -9,8 +9,10 @@ package com.qzi.cms.server.mapper;
 
 import java.util.List;
 
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.session.RowBounds;
 
 import com.qzi.cms.common.po.UseEquipmentPo;
@@ -139,5 +141,26 @@ public interface UseEquipmentMapper extends BaseMapper<UseEquipmentPo>{
 	@Select("SELECT * from use_equipment where equipmentId like '%${equipmentId}%' and equipmentType='20'")
 	public List<UseEquipmentPo> findUseEquipmentNo1(@Param("equipmentId") String equipmentId);
 
+
+	@Update("update use_equipment set state = #{state} where id=#{id}")
+	public void updateState(@Param("state") String state,@Param("id") String id);
+
+
+	@Delete("delete from use_equipment where communityId=#{communityId}")
+	public void deleteAll(@Param("communityId") String communityId);
+
+	@Select("select * from use_equipment r right join (select  min(id) as id, equCode from use_equipment where equCode!='0000'   GROUP BY  equCode) t1 on  r.id = t1.id where communityId=#{communityId}")
+	public List<UseEquipmentVo> selectUserAll(@Param("communityId") String communityId);
+
+	@Select("select * from use_equipment where equCode='0000' and  communityId=#{communityId}")
+	public List<UseEquipmentVo> selectUserPublic(@Param("communityId") String communityId);
+
+
+	@Select("select * from use_equipment where equipmentId=#{equipmentNo} and  communityId=#{communityId} limit 1")
+	public UseEquipmentVo selectEquipmentNo(@Param("equipmentNo") String equipmentNo,@Param("communityId") String communityId);
+
+
+	@Select("select e.* from use_equipment e left join use_community c on  e.communityId = c.id where c.communityNo=#{communityNo} and e.equipmentId=#{equipmentId} limit 1")
+    public UseEquipmentVo selectEquipmentOne(@Param("equipmentId") String equipmentId,@Param("communityNo") String communityNo);
 
 }

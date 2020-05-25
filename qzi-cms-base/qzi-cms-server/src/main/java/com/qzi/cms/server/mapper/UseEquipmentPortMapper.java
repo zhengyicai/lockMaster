@@ -22,11 +22,11 @@ import org.apache.ibatis.annotations.Update;
  */
 public interface UseEquipmentPortMapper extends BaseMapper<UseEquipmentPortPo>{
 
-	@Update("update use_equipment_port set ips=#{ips},port=#{port},createTime = now()  where equipmentNo=#{equipmentNo}")
-	public void update(@Param("ips") String ips,@Param("port") String port,@Param("equipmentNo") String equipmentNo);
+	@Update("update use_equipment_port set ips=#{ips},port=#{port},createTime = now()  where equipmentId=#{equipmentId}")
+	public void update(@Param("ips") String ips,@Param("port") String port,@Param("equipmentId") String equipmentId);
 
-	@Select("select * from use_equipment_port where equipmentNo=#{equipmentNo} ")
-	public UseEquipmentPortPo findOne(@Param("equipmentNo") String equipmentNo);
+	@Select("select * from use_equipment_port where equipmentNo=#{equipmentNo} and equipmentId=#{equipmentId} ")
+	public UseEquipmentPortPo findOne(@Param("equipmentNo") String equipmentNo,@Param("equipmentId") String equipmentId);
 
 
 }

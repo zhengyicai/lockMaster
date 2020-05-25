@@ -11,10 +11,7 @@ import com.qzi.cms.common.util.HttpClientManager;
 import com.qzi.cms.common.util.LogUtils;
 import com.qzi.cms.common.util.SoundwavUtils;
 import com.qzi.cms.common.util.ToolUtils;
-import com.qzi.cms.common.vo.HomeUserCommunityVo;
-import com.qzi.cms.common.vo.UseEquipmentNowStateVo;
-import com.qzi.cms.common.vo.UseEquipmentVo;
-import com.qzi.cms.common.vo.UseResidentVo;
+import com.qzi.cms.common.vo.*;
 import com.qzi.cms.server.mapper.*;
 import com.qzi.cms.server.service.web.ResidentService;
 import org.omg.PortableInterceptor.SUCCESSFUL;
@@ -22,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.ContextLoader;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import redis.clients.jedis.Jedis;
 
 import javax.annotation.Resource;
@@ -29,7 +27,9 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -91,8 +91,14 @@ public class EquipmentController {
 
 
     @Resource
+    private UseCommunityMapper useCommunityMapper;
+
+    @Resource
     private RedisService redisService;
 
+
+    @Resource
+    private UseLockRecordMapper useLockRecordMapper;
 
     public  DatagramSocket  socket = null;
 
@@ -181,6 +187,41 @@ public class EquipmentController {
         return respBody;
     }
 
+
+
+
+    //获取小区对应的设备
+    @GetMapping("/test")
+    public RespBody test(){
+        RespBody respBody = new RespBody();
+
+        String str=  "{'deviceCode':'200311','cmd':'heart','communityId':'123456'}";
+
+        JSONObject jsStr = JSONObject.parseObject(str+"");
+
+
+
+        String  equNo1 = jsStr.getString("deviceCode");
+        String cmd1  = jsStr.getString("cmd");
+        String communityNo1 = jsStr.getString("communityId");
+        UseCommunityVo useCommunityVo =  useCommunityMapper.findCommunityNo(communityNo1);
+
+        UseEquipmentVo useEquipmentVo =    useEquipmentMapper.selectEquipmentNo(equNo1,useCommunityVo.getId());
+
+        useEquipmentPortMapper.update("1232","8080",useEquipmentVo.getId());
+
+        UseEquipmentNowStatePo nowStatePo =   useEquipmentNowStateMapper.findOne(equNo1,useEquipmentVo.getId());
+
+        try {
+            //List<UseEquipmentVo> useEquipmentPoList =   useEquipmentMapper.communityIdList(communityId);
+          //  respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取卡号列表成功",useEquipmentPoList);
+        } catch (Exception ex) {
+            respBody.add(RespCodeEnum.ERROR.getCode(), "发卡失败");
+            LogUtils.error("发卡失败！",ex);
+        }
+        return respBody;
+    }
+
     //获取该设备的房卡列表
 
     @GetMapping("/getUserCardList")
@@ -210,6 +251,7 @@ public class EquipmentController {
         return respBody;
 
     }
+
 
 
     /**
@@ -284,14 +326,58 @@ public class EquipmentController {
 
 
 
+    @ResponseBody
+    @RequestMapping(value = "/unlockCallback",method = RequestMethod.POST)
+    public RespBody unlockCallback(@RequestBody UnlockRecord1 unlockRecord1, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IllegalStateException, IOException {
+        RespBody respBody=new RespBody();
+
+        //System.out.print("++++++++++++++++"+unlockRecord1.getDeviceCode()+",,,,"+unlockRecord1.getRoomNumber());
+        respBody.add(RespCodeEnum.SUCCESS.getCode(), "添加成功");
+
+
+        UseEquipmentVo useEquipmentVo =   useEquipmentMapper.selectEquipmentOne(unlockRecord1.getDeviceCode(),unlockRecord1.getCommunityId());
+
+        if(useEquipmentVo==null){
+            respBody.add(RespCodeEnum.ERROR.getCode(), "该设备不存在，请联系管理员");
+            return  respBody;
+        }
+
+        UseLockRecordPo useLockRecordPo = new UseLockRecordPo();
+        useLockRecordPo.setId(ToolUtils.getUUID());
+        useLockRecordPo.setCreateTime(new Date());
+        useLockRecordPo.setState("10");
+        useLockRecordPo.setEquipmentId(useEquipmentVo.getId());
+        useLockRecordPo.setCardId("");
+        useLockRecordPo.setUserId("");
+        useLockRecordPo.setUserName("");
+
+
+        useLockRecordPo.setDeviceCode(unlockRecord1.getDeviceCode());
+        useLockRecordPo.setCommunityId(unlockRecord1.getCommunityId());
+        useLockRecordPo.setFile(unlockRecord1.getFile());
+        useLockRecordPo.setType(unlockRecord1.getType());
+        useLockRecordPo.setResult(unlockRecord1.getResult());
+        useLockRecordPo.setUnlockTime(unlockRecord1.getUnlockTime());
+        useLockRecordPo.setRoomNumber(unlockRecord1.getRoomNumber());
+        useLockRecordPo.setPhone(unlockRecord1.getPhone());
+
+        useLockRecordMapper.insert(useLockRecordPo);
+
+
+
+
+        return  respBody;
+
+    }
 
 
 
 
 
-    /**
-     * 添加人脸记录数据
-     */
+
+        /**
+         * 添加人脸记录数据
+         */
     @ResponseBody
     @RequestMapping(value = "/photoUpload",method = RequestMethod.POST)
     public RespBody photoUpload(MultipartFile file, UseResidentVo useResidentVo, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IllegalStateException, IOException {
@@ -461,22 +547,44 @@ public class EquipmentController {
      * 远程开锁
      */
 
-    @PostMapping("/onlineUnlock")
-    public void onlineUnlock(UseEquipmentPortPo po) throws  Exception {
+    @ResponseBody
+    @RequestMapping(value = "/onlineUnlock",method = RequestMethod.POST)
+    public void onlineUnlock(@RequestBody UseEquipmentPortPo po) throws  Exception {
 
-        UseEquipmentPortPo  portPo =   useEquipmentPortMapper.findOne(po.getEquipmentNo());
+        UseEquipmentPortPo  portPo =   useEquipmentPortMapper.findOne(po.getEquipmentNo(),po.getEquipmentId());
 
-        UseResidentPo usePo =  useResidentMapper.findWxId(po.getId());
+        //UseResidentPo usePo =  useResidentMapper.findWxId(po.getId());
 
         UseResidentVo useResidentVo = new UseResidentVo();
-        useResidentVo.setMobile(usePo.getMobile());
-        useResidentVo.setWxId(usePo.getWxId());
+
+        useResidentVo.setMobile(po.getId());
+//        useResidentVo.setWxId(usePo.getWxId());
         useResidentVo.setCmd("unlock");
         useResidentVo.setDeviceId(po.getEquipmentId());
 
+        UseCommunityPo useCommunityPo =  useResidentMapper.findCommunity(po.getId());
+
+        UseResidentPo useResidentPo = useResidentMapper.findMobile(po.getId());
+        if(useCommunityPo==null){
+            return;
+        }
+
         useResidentVo.setEquipmentNo(po.getEquipmentNo());
 
-        byte[] bs = JSON.toJSONString(useResidentVo).getBytes();//要发的信息内容
+
+
+
+
+        OnlockVo onlockVo  = new OnlockVo();
+        onlockVo.setCmd("unlock");
+        onlockVo.setCommunityId(useCommunityPo.getCommunityNo());
+        onlockVo.setDeviceCode(po.getEquipmentNo());
+        onlockVo.setPhone(po.getId());
+        onlockVo.setRoomNumber(useResidentPo.getOpenPwd());  //房间号
+
+
+
+        byte[] bs = JSON.toJSONString(onlockVo).getBytes();//要发的信息内容
 
         InetAddress desIp = InetAddress.getByName(portPo.getIps());
         DatagramPacket p = new DatagramPacket(bs, bs.length, desIp, Integer.parseInt(portPo.getPort()));
@@ -608,6 +716,8 @@ public class EquipmentController {
 
 
 
+
+
     //获取设备是否需要同步数据
     @GetMapping("/sentPort")
     public RespBody sentPort() throws  Exception{
@@ -620,13 +730,13 @@ public class EquipmentController {
 
 
         //刷新assess_token
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-          @Override
-          public void run() {
-                System.out.println("assess_token:"+getAccessToken()) ;
-          }
-        }, 1000,7000000);// 设定指定的时间time,此处为2000毫秒
+//        Timer timer = new Timer();
+//        timer.schedule(new TimerTask() {
+//          @Override
+//          public void run() {
+//                System.out.println("assess_token:"+getAccessToken()) ;
+//          }
+//        }, 1000,7000000);// 设定指定的时间time,此处为2000毫秒
 
 
 
@@ -655,12 +765,31 @@ public class EquipmentController {
                         System.out.println("接收端接收到的数据："+datagramPacket.getData()); // getLength() 获取数据包存储了几个字节。
                         System.out.println("receive阻塞了我，哈哈"+datagramPacket.getAddress()+":"+datagramPacket.getPort());
 
+                        //String[] recordList = new String(buf,0,datagramPacket.getLength()).split(",",-1);
+
+
+                        //{"deviceCode":"200311","cmd":"heart","communityId":"123456"}
+
+                        JSONObject jsStr = JSONObject.parseObject(new String(buf,0,datagramPacket.getLength()));
+
+
+
+                         String  equNo1 = jsStr.getString("deviceCode");
+                         String cmd1  = jsStr.getString("cmd");
+                         String communityNo1 = jsStr.getString("communityId");
+
+
+                         System.out.println("equNo1="+equNo1+",cmd1="+cmd1+",communityNo1="+communityNo1);
+
+                         UseCommunityVo useCommunityVo =  useCommunityMapper.findCommunityNo(communityNo1);
+
+                        UseEquipmentVo useEquipmentVo =    useEquipmentMapper.selectEquipmentNo(equNo1,useCommunityVo.getId());
 
                         //doData(datagramPacket.getData());
                         //UseEquipmentPortPo portPo = new UseEquipmentPortPo();
-                        useEquipmentPortMapper.update(String.valueOf(datagramPacket.getAddress()).substring(1,String.valueOf(datagramPacket.getAddress()).length()),datagramPacket.getPort()+"",new String(buf,0,datagramPacket.getLength()));
+                        useEquipmentPortMapper.update(String.valueOf(datagramPacket.getAddress()).substring(1,String.valueOf(datagramPacket.getAddress()).length()),datagramPacket.getPort()+"",useEquipmentVo.getId());
 
-                        UseEquipmentNowStatePo nowStatePo =   useEquipmentNowStateMapper.findOne(new String(buf,0,datagramPacket.getLength()));
+                        UseEquipmentNowStatePo nowStatePo =   useEquipmentNowStateMapper.findOne(equNo1,useEquipmentVo.getId());
                         if(nowStatePo == null){
                             respBody.add(RespCodeEnum.SUCCESS.getCode(), "error");
                             byte[] bs = "error".getBytes();//要发的信息内容
@@ -675,7 +804,7 @@ public class EquipmentController {
 
                             UseEquipmentNowStateVo nowStateVo = new UseEquipmentNowStateVo();
                             nowStateVo.setEquipmentNo(nowStatePo.getEquipmentNo());
-                            nowStateVo.setState(nowStatePo.getState());
+                            nowStateVo.setResult("0");
                             nowStateVo.setCmd("heartack");
 
                             byte[] bs = JSON.toJSONString(nowStateVo).getBytes();//要发的信息内容
@@ -744,7 +873,46 @@ public class EquipmentController {
     }
 
 
+    @ResponseBody
+    @RequestMapping(value = "/addUpload",method = RequestMethod.POST)
+    public RespBody addUpload( HttpServletRequest request) throws IllegalStateException, IOException {
+        RespBody respBody = new RespBody();
 
+        MultipartHttpServletRequest params = ((MultipartHttpServletRequest) request);
+        List<MultipartFile> files = ((MultipartHttpServletRequest) request)
+                .getFiles("file");
+        String name = params.getParameter("name");
+        System.out.println("name:" + name);
+
+        String id = params.getParameter("id");
+        System.out.println("id:" + id);
+
+        Map<String, String> urlMap = new HashMap<>();
+
+        MultipartFile file = null;
+        BufferedOutputStream stream = null;
+        for (int i = 0; i < files.size(); ++i) {
+            file = files.get(i);
+            if (!file.isEmpty()) {
+                try {
+                    byte[] bytes = file.getBytes();
+                    String realPath=request.getSession().getServletContext().getRealPath("/");
+                    stream = new BufferedOutputStream(new FileOutputStream(
+                            new File(realPath+file.getOriginalFilename())));//存在项目根目录下
+                    stream.write(bytes);
+                    stream.close();
+                } catch (Exception e) {
+                    stream = null;
+                    return respBody;
+                }
+            } else {
+                return respBody;
+            }
+        }
+
+
+        return respBody;
+    }
     //获取设备是否需要同步数据(弃用)
     @GetMapping("/sentUnlock")
     public RespBody sentUnlock() throws  Exception{
