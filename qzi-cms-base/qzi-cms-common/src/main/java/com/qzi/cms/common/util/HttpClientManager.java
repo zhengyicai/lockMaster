@@ -1,7 +1,6 @@
 package com.qzi.cms.common.util;
 
 
-import com.alibaba.fastjson.JSON;
 import com.qzi.cms.common.vo.UseResidentVo;
 
 import java.io.BufferedReader;

@@ -446,31 +446,39 @@ public class UserController {
 	public RespBody addResidentEquipment(@RequestBody UseUserCardVo useUserCardVo){
 		RespBody respBody = new RespBody();
 
-		if(useUserCardVo.getChoId().length>0){
+		useResidentEquipmentMapper.deleteResident(useUserCardVo.getId(),useUserCardVo.getCommunityId());
 
-			UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
-			for(int i  = 0;i<useUserCardVo.getChoId().length;i++){
-				useResidentEquipmentPo.setId(ToolUtils.getUUID());
-				useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
-				useResidentEquipmentPo.setState("10");
-				useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
-				useResidentEquipmentPo.setEquipmentId(useUserCardVo.getChoId()[i]);
-				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
-			}
 
-			//添加公共设备
-			List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useUserCardVo.getCommunityId());
-			for(int i = 0;i<list1.size();i++){
-				useResidentEquipmentPo.setId(ToolUtils.getUUID());
-				useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
-				useResidentEquipmentPo.setState("10");
-				useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
-				useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
-				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
-			}
+		UseResidentPo useResidentPo =   useResidentMapper.findOne(useUserCardVo.getId());
+		useResidentPo.setEquipmentId(useUserCardVo.getEquipmentId());
+		useResidentPo.setUnitNo(useUserCardVo.getCardNo());
+		useResidentMapper.updateByPrimaryKey(useResidentPo);
+
+		//修改房间号
+		//useResidentMapper.openPwd(useUserCardVo.getId(),useUserCardVo.getCardNo());
 
 
 
+		UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(useUserCardVo.getEquipmentId());
+
+		if(useEquipmentPo==null){
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "没有找到该小区对应的设备");
+			return  respBody;
+		}
+
+
+
+
+		UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
+		//添加公共设备
+		List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useEquipmentPo.getEquCode(),useUserCardVo.getCommunityId());
+		for(int i = 0;i<list1.size();i++){
+			useResidentEquipmentPo.setId(ToolUtils.getUUID());
+			useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
+			useResidentEquipmentPo.setState("10");
+			useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
+			useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
+			useResidentEquipmentMapper.insert(useResidentEquipmentPo);
 		}
 		return respBody;
 	}
@@ -528,6 +536,12 @@ public class UserController {
 	public RespBody updateUserCard(@RequestBody UseUserCardVo useUserCardVo){
 		RespBody respBody = new RespBody();
 
+
+		UseResidentPo useResidentPo =   useResidentMapper.findOne(useUserCardVo.getId());
+		useResidentPo.setEquipmentId(useUserCardVo.getEquipmentId());
+		useResidentPo.setUnitNo(useUserCardVo.getCardNo());
+		useResidentMapper.updateByPrimaryKey(useResidentPo);
+
 		if(useUserCardVo.getChoId().length>0){
 
 
@@ -565,29 +579,42 @@ public class UserController {
 
 		useResidentEquipmentMapper.deleteResident(useUserCardVo.getId(),useUserCardVo.getCommunityId());
 
+
+		UseResidentPo useResidentPo =   useResidentMapper.findOne(useUserCardVo.getId());
+		useResidentPo.setEquipmentId(useUserCardVo.getEquipmentId());
+		useResidentPo.setUnitNo(useUserCardVo.getCardNo());
+		useResidentMapper.updateByPrimaryKey(useResidentPo);
+
 		//修改房间号
-		useResidentMapper.openPwd(useUserCardVo.getId(),useUserCardVo.getCardNo());
-		UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
-
-		useResidentEquipmentPo.setId(ToolUtils.getUUID());
-		useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
-		useResidentEquipmentPo.setState("10");
-		useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
-		useResidentEquipmentPo.setEquipmentId(useUserCardVo.getEquipmentId());
-		useResidentEquipmentMapper.insert(useResidentEquipmentPo);
+		//useResidentMapper.openPwd(useUserCardVo.getId(),useUserCardVo.getCardNo());
 
 
 
-		//添加公共设备
-		List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useUserCardVo.getCommunityId());
-		for(int i = 0;i<list1.size();i++){
-			useResidentEquipmentPo.setId(ToolUtils.getUUID());
-			useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
-			useResidentEquipmentPo.setState("10");
-			useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
-			useResidentEquipmentPo.setEquipmentId(useUserCardVo.getEquipmentId());
-			useResidentEquipmentMapper.insert(useResidentEquipmentPo);
-		}
+			UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(useUserCardVo.getEquipmentId());
+
+			if(useEquipmentPo==null){
+				respBody.add(RespCodeEnum.SUCCESS.getCode(), "没有找到该小区对应的设备");
+				return  respBody;
+			}
+
+
+
+
+			UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
+			//添加公共设备
+			List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useEquipmentPo.getEquCode(),useUserCardVo.getCommunityId());
+			for(int i = 0;i<list1.size();i++){
+				useResidentEquipmentPo.setId(ToolUtils.getUUID());
+				useResidentEquipmentPo.setCommunityId(useUserCardVo.getCommunityId());
+				useResidentEquipmentPo.setState("10");
+				useResidentEquipmentPo.setResidentId(useUserCardVo.getId());
+				useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
+				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
+			}
+
+
+
+
 		return respBody;
 	}
 

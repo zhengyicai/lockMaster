@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  * 用户设备表
- * @author zyc
+ * @author qsy
  * @version v1.0
  * @date 2017年7月22日
  */
@@ -55,6 +55,10 @@ public interface UseResidentEquipmentMapper extends BaseMapper<UseResidentEquipm
 
 	@Select("select e.*,TIMESTAMPDIFF(SECOND,p.createTime,now()) as lastTime from use_equipment e left join use_equipment_port p on e.equNo = p.equipmentNo  where e.id in  (select equipmentId from use_resident_equipment where residentId = (select id  from use_resident where wxid=#{wxid})) ")
 	public List<UseEquipmentVo> findWxId(@Param("wxid") String wxid);
+
+
+
+
 
 
 

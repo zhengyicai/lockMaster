@@ -104,6 +104,24 @@ public class UseResidentPo implements Serializable{
 	private String  residentType;
 	private String communityId;
 
+	private String equipmentId;
+	private String unitNo;
+
+	public String getEquipmentId() {
+		return equipmentId;
+	}
+
+	public void setEquipmentId(String equipmentId) {
+		this.equipmentId = equipmentId;
+	}
+
+	public String getUnitNo() {
+		return unitNo;
+	}
+
+	public void setUnitNo(String unitNo) {
+		this.unitNo = unitNo;
+	}
 
 	public String getCommunityId() {
 		return communityId;

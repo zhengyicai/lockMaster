@@ -9,6 +9,7 @@ package com.qzi.cms.server.mapper;
 
 import java.util.List;
 
+import com.qzi.cms.common.vo.EquipmentOnlineVo;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -100,6 +101,11 @@ public interface UseEquipmentMapper extends BaseMapper<UseEquipmentPo>{
 	@Select("SELECT * from use_equipment where equipmentId=#{equipmentId}")
 	public UseEquipmentVo findEquipmentInfo(@Param("equipmentId") String equipmentId);
 
+
+
+	@Select("SELECT * from use_equipment where id=#{id}")
+	public UseEquipmentVo findId(@Param("id") String id);
+
 	/**
 	 * 查询用户管理机
 	 * @param
@@ -152,8 +158,8 @@ public interface UseEquipmentMapper extends BaseMapper<UseEquipmentPo>{
 	@Select("select * from use_equipment r right join (select  min(id) as id, equCode from use_equipment where equCode!='0000'   GROUP BY  equCode) t1 on  r.id = t1.id where communityId=#{communityId}")
 	public List<UseEquipmentVo> selectUserAll(@Param("communityId") String communityId);
 
-	@Select("select * from use_equipment where equCode='0000' and  communityId=#{communityId}")
-	public List<UseEquipmentVo> selectUserPublic(@Param("communityId") String communityId);
+	@Select("select * from use_equipment where (equCode='0000' or equCode=#{equCode}) and  communityId=#{communityId}")
+	public List<UseEquipmentVo> selectUserPublic(@Param("equCode") String equCode,@Param("communityId") String communityId);
 
 
 	@Select("select * from use_equipment where equipmentId=#{equipmentNo} and  communityId=#{communityId} limit 1")
@@ -163,4 +169,7 @@ public interface UseEquipmentMapper extends BaseMapper<UseEquipmentPo>{
 	@Select("select e.* from use_equipment e left join use_community c on  e.communityId = c.id where c.communityNo=#{communityNo} and e.equipmentId=#{equipmentId} limit 1")
     public UseEquipmentVo selectEquipmentOne(@Param("equipmentId") String equipmentId,@Param("communityNo") String communityNo);
 
+
+	@Select("select  uq.*,uc.communityName ,un.state as 'status' from use_resident_equipment re  left join use_equipment  uq  on re.equipmentId = uq.id inner join use_community uc on re.communityId = uc.id inner join  use_equipment_nowState un on re.equipmentId =  un.equipmentId where re.residentId = #{residentId} and re.communityId=#{communityId}")
+	public List<EquipmentOnlineVo> findOnlineAll(@Param("residentId") String residentId,@Param("communityId") String communityId);
 }

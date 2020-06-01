@@ -103,6 +103,10 @@ public class EquipmentController {
     public  DatagramSocket  socket = null;
 
 
+    @Resource
+    private UseLockUdpMapper useLockUdpMapper;
+
+
 
 
 
@@ -360,6 +364,7 @@ public class EquipmentController {
         useLockRecordPo.setUnlockTime(unlockRecord1.getUnlockTime());
         useLockRecordPo.setRoomNumber(unlockRecord1.getRoomNumber());
         useLockRecordPo.setPhone(unlockRecord1.getPhone());
+        useLockRecordPo.setFile(unlockRecord1.getFile());
 
         useLockRecordMapper.insert(useLockRecordPo);
 
@@ -580,7 +585,7 @@ public class EquipmentController {
         onlockVo.setCommunityId(useCommunityPo.getCommunityNo());
         onlockVo.setDeviceCode(po.getEquipmentNo());
         onlockVo.setPhone(po.getId());
-        onlockVo.setRoomNumber(useResidentPo.getOpenPwd());  //房间号
+        onlockVo.setRoomNumber(useResidentPo.getUnitNo());  //房间号
 
 
 
@@ -600,6 +605,23 @@ public class EquipmentController {
         socket.send(p);
 
         System.out.println("发送udp"+desIp+":"+portPo.getPort()+""+p);
+
+
+        UseLockUdpPo useLockUdpPo = new UseLockUdpPo();
+        useLockUdpPo.setId(ToolUtils.getUUID());
+        useLockUdpPo.setState("20");
+        useLockUdpPo.setCreateTime(new Date());
+        useLockUdpPo.setPhone(po.getId());
+        useLockUdpPo.setRoomNumber(useResidentPo.getUnitNo());
+        useLockUdpPo.setCommunityId(useCommunityPo.getCommunityNo());
+        useLockUdpPo.setEquipmentId(po.getEquipmentId());
+        useLockUdpMapper.insert(useLockUdpPo);
+
+
+
+
+
+
         //关闭socket_A套接字
         //Thread.sleep(1000);
         //socket.close();
@@ -624,6 +646,103 @@ public class EquipmentController {
         }
         return respBody;
     }
+
+
+    /**
+     * 获取反馈状态
+     * @param phone
+     * @param equipmentId
+     * @return
+     */
+    @GetMapping("/getEquipmentStatus")
+    public RespBody getEquipmentStatus(String  phone,String equipmentId){
+        RespBody respBody = new RespBody();
+
+
+       UseResidentPo useResidentPo  =   useResidentMapper.findMobile(phone);
+
+       UseLockUdpPo useLockUdpPo =    useLockUdpMapper.findOne(phone,useResidentPo.getUnitNo(),equipmentId);
+
+        respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功",useLockUdpPo);
+
+        return  respBody;
+    }
+
+
+
+
+    @GetMapping("/getUser")
+    public RespBody getUser(String  phone){
+        RespBody respBody = new RespBody();
+
+       String str =  "{\"communityId\":\"123456\",\"phone\":\"18676487058\",\"roomNumber\":\"0111\",\"timeStamp\":1590820324858,\"unitId\":\"0011\"}";
+
+       UseResidentPo useResidentPo =   useResidentMapper.findMobile(phone);
+
+       if(useResidentPo==null){
+           respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功","");
+           return respBody;
+       }
+       //System.out.print(str);
+
+       CodeVo codeVo = new CodeVo();
+       UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(useResidentPo.getEquipmentId());
+       UseCommunityPo useCommunityPo =  useCommunityMapper.findOne(useEquipmentPo.getCommunityId());
+
+
+       codeVo.setCommunityId(useCommunityPo.getCommunityNo());
+       codeVo.setPhone(phone);
+       codeVo.setRoomNumber(useResidentPo.getUnitNo());
+       codeVo.setTimeStamp(new Date().getTime()+"");
+       codeVo.setUnitId(useEquipmentPo.getEquCode());
+
+
+
+    //    System.out.print(JSONObject.parse(str));
+      //  Object obj = JSONObject.parse(codeVo);
+        str =  JSON.toJSONString(codeVo);
+
+        //String obj1=   JSON.toJSONString(obj);
+
+       byte[] data = str.getBytes();
+        try {
+
+            byte[] dataEnc = new byte[data.length];
+            for (int i = 0; i < dataEnc.length; i++) {
+                dataEnc[i] = (byte)(data[i]^0x31);
+            }
+
+            String s2 = new String(dataEnc);
+
+            respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功",s2);
+        } catch (Exception ex) {
+            respBody.add(RespCodeEnum.ERROR.getCode(), "获取用户数据失败");
+            LogUtils.error("获取用户数据失败！",ex);
+        }
+        return respBody;
+    }
+
+
+    @GetMapping("/getEquipmentList")
+    public RespBody getEquipmentList(String  phone){
+        RespBody respBody = new RespBody();
+
+
+       UseResidentPo useResidentPo =    useResidentMapper.findMobile(phone);
+
+       if(useResidentPo==null){
+           respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号暂未绑定");
+       }
+
+
+       List<EquipmentOnlineVo>  equlpmentOnlineList =   useEquipmentMapper.findOnlineAll(useResidentPo.getId(),useResidentPo.getCommunityId());
+
+       respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取数据成功",equlpmentOnlineList);
+
+        return  respBody;
+
+    }
+
 
 //
 //    public void doData(String value){
@@ -757,8 +876,8 @@ public class EquipmentController {
                         e.printStackTrace();
                     }
 
-
-                    DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length); // 1024
+                        System.out.print("udp recv start");
+                        DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length); // 1024
                         //调用udp的服务接收数据
                         socket.receive(datagramPacket); //receive是一个阻塞型的方法，没有接收到数据包之前会一直等待。 数据实际上就是存储到了byte的自己数组中了。
                         System.out.println("接收端接收到的数据："+ new String(buf,0,datagramPacket.getLength())); // getLength() 获取数据包存储了几个字节。
@@ -789,6 +908,17 @@ public class EquipmentController {
                         //UseEquipmentPortPo portPo = new UseEquipmentPortPo();
                         useEquipmentPortMapper.update(String.valueOf(datagramPacket.getAddress()).substring(1,String.valueOf(datagramPacket.getAddress()).length()),datagramPacket.getPort()+"",useEquipmentVo.getId());
 
+
+
+                        //修改开锁状态
+//                        if("unlockack".equals(cmd1)){
+//                            String phone = jsStr.getString("phone");
+//                            String roomNumber = jsStr.getString("roomNumber");
+//
+//                            useLockUdpMapper.updateStatus(phone,roomNumber);
+//                        }
+
+
                         UseEquipmentNowStatePo nowStatePo =   useEquipmentNowStateMapper.findOne(equNo1,useEquipmentVo.getId());
                         if(nowStatePo == null){
                             respBody.add(RespCodeEnum.SUCCESS.getCode(), "error");
@@ -802,8 +932,12 @@ public class EquipmentController {
                         }else{
                             respBody.add(RespCodeEnum.SUCCESS.getCode(), nowStatePo.getState());
 
-                            UseEquipmentNowStateVo nowStateVo = new UseEquipmentNowStateVo();
-                            nowStateVo.setEquipmentNo(nowStatePo.getEquipmentNo());
+                            nowStatePo.setUpdateTime(new Date());
+                            nowStatePo.setState("10");
+                            useEquipmentNowStateMapper.updateByPrimaryKey(nowStatePo);
+
+                            UseEquipmentNowStateVo1 nowStateVo = new UseEquipmentNowStateVo1();
+                            nowStateVo.setDeviceCode(nowStatePo.getEquipmentNo());
                             nowStateVo.setResult("0");
                             nowStateVo.setCmd("heartack");
 
@@ -891,14 +1025,20 @@ public class EquipmentController {
 
         MultipartFile file = null;
         BufferedOutputStream stream = null;
+        String realPath=request.getSession().getServletContext().getRealPath("/");
+
+        String urls = "";
         for (int i = 0; i < files.size(); ++i) {
             file = files.get(i);
             if (!file.isEmpty()) {
                 try {
                     byte[] bytes = file.getBytes();
-                    String realPath=request.getSession().getServletContext().getRealPath("/");
+
                     stream = new BufferedOutputStream(new FileOutputStream(
-                            new File(realPath+file.getOriginalFilename())));//存在项目根目录下
+                            new File(imagepath+file.getOriginalFilename())));//存在项目根目录下
+                    urls = imagepath+file.getOriginalFilename();
+
+
                     stream.write(bytes);
                     stream.close();
                 } catch (Exception e) {
@@ -909,6 +1049,12 @@ public class EquipmentController {
                 return respBody;
             }
         }
+
+       // file.transferTo(new File(path));
+
+
+        Runtime.getRuntime().exec("chmod 777 -R " +urls);
+        respBody.add(RespCodeEnum.SUCCESS.getCode(), "查找所有住户房卡数据成功", urls);
 
 
         return respBody;

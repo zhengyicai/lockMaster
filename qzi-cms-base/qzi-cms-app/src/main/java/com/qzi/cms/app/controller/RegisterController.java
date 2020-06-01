@@ -10,6 +10,7 @@ import com.qzi.cms.common.enums.RespCodeEnum;
 import com.qzi.cms.common.exception.CommException;
 import com.qzi.cms.common.po.*;
 import com.qzi.cms.common.resp.RespBody;
+import com.qzi.cms.common.service.RedisService;
 import com.qzi.cms.common.util.CryptUtils;
 import com.qzi.cms.common.util.LogUtils;
 
@@ -33,9 +34,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 注册控制器
@@ -81,6 +85,10 @@ public class RegisterController {
 
 	@Resource
 	private UseResidentMapper useResidentMapper;
+
+
+	@Resource
+	private RedisService redisService;
 
 
 	@GetMapping("/getLevel")
@@ -277,6 +285,43 @@ public class RegisterController {
 		respBody.add("0000","删除成功");
 		return respBody;
 	}
+
+
+	@PostMapping("/appRegisters")
+	@SystemControllerLog(description="用户注册")
+	public RespBody appRegisters(@RequestBody UseResidentVo residentVo){
+		RespBody respBody = new RespBody();
+		//读取redis中的短信验证码
+		Object obj = redisService.getObj(residentVo.getMobile());
+		String smsCode="";
+		if (obj != null && obj instanceof Map) {
+			Map<String, String> data = (Map<String, String>) obj;
+			smsCode = data.get("smsCode");
+		}
+		if (!smsCode.equals(residentVo.getSmsCode())) {
+			respBody.add(RespCodeEnum.ERROR.getCode(), "验证码输入有误");
+			return  respBody;
+		}else{
+			 UseResidentPo useResidentPo =  useResidentMapper.findMobile(residentVo.getMobile());
+
+			 useResidentPo.setName(residentVo.getName());
+			 useResidentMapper.updateByPrimaryKey(useResidentPo);
+
+			 if(useResidentPo==null){
+				 respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号尚未注册,请联系物业");
+			 }else{
+				 respBody.add(RespCodeEnum.SUCCESS.getCode(), "绑定成功");
+			 }
+
+
+
+
+		}
+
+
+		return  respBody;
+	}
+
 
 	@PostMapping("/appRegister")
 	@SystemControllerLog(description="用户注册")
