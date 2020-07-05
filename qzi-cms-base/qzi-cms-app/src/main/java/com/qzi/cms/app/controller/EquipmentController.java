@@ -3,6 +3,7 @@ package com.qzi.cms.app.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.fasterxml.jackson.core.JsonParser;
+import com.qzi.cms.common.annotation.SystemControllerLog;
 import com.qzi.cms.common.enums.RespCodeEnum;
 import com.qzi.cms.common.po.*;
 import com.qzi.cms.common.resp.RespBody;
@@ -113,6 +114,126 @@ public class EquipmentController {
     private String imagepath = "/data/page/uploadImages/";
     private   String appid = "wx23bfac0f706f04ac";
     private   String appsecret = "098f8f3795cc7d4c2e51ecc95bf88b41";
+
+
+    @GetMapping("/getCommunitylist")
+    public RespBody getCommunitylist(){
+        RespBody respBody = new RespBody();
+        try {
+
+
+            respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取小区列表成功",useCommunityMapper.findList());
+
+        } catch (Exception ex) {
+            respBody.add(RespCodeEnum.ERROR.getCode(), "获取小区列表失败");
+            LogUtils.error("获取小区列表失败！",ex);
+        }
+        return respBody;
+    }
+
+    @GetMapping("/findCommunitys")
+    public RespBody findCommunitys(String communityId){
+        RespBody respBody = new RespBody();
+        try {
+            //查找数据并返回
+            respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户小区信息成功",useEquipmentMapper.selectUserAll(communityId));
+        } catch (Exception ex) {
+            respBody.add(RespCodeEnum.ERROR.getCode(), "获取用户小区信息异常");
+            LogUtils.error("获取用户小区信息异常！",ex);
+        }
+        return respBody;
+    }
+
+
+    @PostMapping("/addUser")
+    @SystemControllerLog(description="新增住户信息")
+    public RespBody add(@RequestBody UseResidentVo useResidentVo){
+        RespBody respBody = new RespBody();
+        Object obj = redisService.getObj(useResidentVo.getMobile());
+        String smsCode="";
+        if (obj != null && obj instanceof Map) {
+            Map<String, String> data = (Map<String, String>) obj;
+            smsCode = data.get("smsCode");
+        }
+        if (!smsCode.equals(useResidentVo.getSmsCode())) {
+            respBody.add(RespCodeEnum.ERROR.getCode(), "验证码输入有误");
+            return  respBody;
+        }
+        try {
+
+            //添加用户
+            UseResidentPo useResidentPo = new UseResidentPo();
+            String id = ToolUtils.getUUID();
+            useResidentPo.setId(id);
+            useResidentPo.setWxId("");
+            useResidentPo.setCreateTime(new Date());
+            useResidentPo.setFingerUrl("");
+            useResidentPo.setIdentityId("");
+            useResidentPo.setPassword(useResidentVo.getPassword());
+
+            DateFormat dateFormat2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date myDate2 = dateFormat2.parse("2099-12-31 23:59:59");
+            useResidentPo.setLastTime(myDate2);
+
+            useResidentPo.setResidentType("");
+            useResidentPo.setState("30");
+            useResidentPo.setIdentityNo("");
+            useResidentPo.setMobile(useResidentVo.getMobile());
+            useResidentPo.setName(useResidentVo.getName());
+            useResidentPo.setPassword("");
+            useResidentPo.setWxId("");
+            useResidentPo.setImgUrl("");
+            useResidentPo.setSalt("");
+            useResidentPo.setClientNumber("");
+            useResidentPo.setClientPwd("");
+            useResidentPo.setLoginToken("");
+            useResidentPo.setOpenPwd("");
+
+            useResidentPo.setEquipmentId(useResidentVo.getEquipmentId());
+            useResidentPo.setUnitNo(useResidentVo.getUnitNo());
+            useResidentPo.setRemark(useResidentVo.getRemark());
+
+
+//            if(useResidentMapper.findMobile(useResidentPo.getMobile())!=null){
+//                respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号已经绑定过");
+//                return respBody;
+//            }
+
+            useResidentPo.setCommunityId(useResidentVo.getCommunityId());
+
+
+
+            UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(useResidentPo.getEquipmentId());
+
+            if(useEquipmentPo==null){
+                respBody.add(RespCodeEnum.SUCCESS.getCode(), "没有找到该小区对应的设备");
+                return  respBody;
+            }
+            UseCommunityPo useCommunityPo  =   useCommunityMapper.findOne(useResidentVo.getCommunityId());
+
+            useResidentPo.setIdentityNo(useCommunityPo.getCommunityName()+useEquipmentPo.getEquId()+useResidentPo.getUnitNo());
+
+            useResidentMapper.insert(useResidentPo);
+
+            UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
+            //添加公共设备
+            List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useEquipmentPo.getEquCode(),useResidentPo.getCommunityId());
+            for(int i = 0;i<list1.size();i++){
+                useResidentEquipmentPo.setId(ToolUtils.getUUID());
+                useResidentEquipmentPo.setCommunityId(useResidentPo.getCommunityId());
+                useResidentEquipmentPo.setState("10");
+                useResidentEquipmentPo.setResidentId(useResidentPo.getId());
+                useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
+                useResidentEquipmentMapper.insert(useResidentEquipmentPo);
+            }
+
+            respBody.add(RespCodeEnum.SUCCESS.getCode(), "绑定住户成功,请等待管理员审核",useResidentPo);
+        } catch (Exception ex) {
+            respBody.add(RespCodeEnum.ERROR.getCode(), "住户据保存失败");
+            LogUtils.error("住户据保存失败！",ex);
+        }
+        return respBody;
+    }
 
 
     /**
@@ -554,10 +675,10 @@ public class EquipmentController {
 
     @ResponseBody
     @RequestMapping(value = "/onlineUnlock",method = RequestMethod.POST)
-    public void onlineUnlock(@RequestBody UseEquipmentPortPo po) throws  Exception {
+    public RespBody onlineUnlock(@RequestBody UseEquipmentPortPo po) throws  Exception {
 
         UseEquipmentPortPo  portPo =   useEquipmentPortMapper.findOne(po.getEquipmentNo(),po.getEquipmentId());
-
+        RespBody respBody = new RespBody();
         //UseResidentPo usePo =  useResidentMapper.findWxId(po.getId());
 
         UseResidentVo useResidentVo = new UseResidentVo();
@@ -567,11 +688,12 @@ public class EquipmentController {
         useResidentVo.setCmd("unlock");
         useResidentVo.setDeviceId(po.getEquipmentId());
 
-        UseCommunityPo useCommunityPo =  useResidentMapper.findCommunity(po.getId());
+        UseCommunityPo useCommunityPo =  useResidentMapper.findCommunitys(po.getIps());
 
-        UseResidentPo useResidentPo = useResidentMapper.findMobile(po.getId());
+        UseResidentPo useResidentPo = useResidentMapper.findOne(po.getIps());
         if(useCommunityPo==null){
-            return;
+            respBody.add(RespCodeEnum.ERROR.getCode(),"该用户没有绑定");
+            return respBody;
         }
 
         useResidentVo.setEquipmentNo(po.getEquipmentNo());
@@ -579,12 +701,13 @@ public class EquipmentController {
 
 
 
-
+        String id = ToolUtils.getUUID();
         OnlockVo onlockVo  = new OnlockVo();
         onlockVo.setCmd("unlock");
         onlockVo.setCommunityId(useCommunityPo.getCommunityNo());
         onlockVo.setDeviceCode(po.getEquipmentNo());
         onlockVo.setPhone(po.getId());
+        onlockVo.setId(id);
         onlockVo.setRoomNumber(useResidentPo.getUnitNo());  //房间号
 
 
@@ -598,8 +721,9 @@ public class EquipmentController {
         //DatagramSocket  = new DatagramSocket(9999);
 
         if(socket == null){
+            respBody.add(RespCodeEnum.ERROR.getCode(),"该用户没有绑定");
            sentPort();
-           return;
+           return respBody;
         }
         //UDPA给UDPB发送数据报
         socket.send(p);
@@ -608,7 +732,7 @@ public class EquipmentController {
 
 
         UseLockUdpPo useLockUdpPo = new UseLockUdpPo();
-        useLockUdpPo.setId(ToolUtils.getUUID());
+        useLockUdpPo.setId(id);
         useLockUdpPo.setState("20");
         useLockUdpPo.setCreateTime(new Date());
         useLockUdpPo.setPhone(po.getId());
@@ -620,8 +744,9 @@ public class EquipmentController {
 
 
 
+        respBody.add(RespCodeEnum.SUCCESS.getCode(),"用户数据获取成功",useLockUdpPo);
 
-
+        return  respBody;
         //关闭socket_A套接字
         //Thread.sleep(1000);
         //socket.close();
@@ -661,7 +786,7 @@ public class EquipmentController {
 
        UseResidentPo useResidentPo  =   useResidentMapper.findMobile(phone);
 
-       UseLockUdpPo useLockUdpPo =    useLockUdpMapper.findOne(phone,useResidentPo.getUnitNo(),equipmentId);
+       UseLockUdpPo useLockUdpPo =    useLockUdpMapper.findId(equipmentId);
 
         respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功",useLockUdpPo);
 
@@ -672,17 +797,31 @@ public class EquipmentController {
 
 
     @GetMapping("/getUser")
-    public RespBody getUser(String  phone){
+    public RespBody getUser(String  phone,String id){
         RespBody respBody = new RespBody();
 
        String str =  "{\"communityId\":\"123456\",\"phone\":\"18676487058\",\"roomNumber\":\"0111\",\"timeStamp\":1590820324858,\"unitId\":\"0011\"}";
 
-       UseResidentPo useResidentPo =   useResidentMapper.findMobile(phone);
+      // UseResidentPo useResidentPo =   useResidentMapper.findMobile(phone);
+
+        UseResidentPo useResidentPo =  useResidentMapper.findMobileId(phone,id);
 
        if(useResidentPo==null){
-           respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功","");
+           respBody.add(RespCodeEnum.ERROR.getCode(), "该账号暂未绑定");
            return respBody;
        }
+
+       if("20".equals(useResidentPo.getState())){
+           respBody.add(RespCodeEnum.ERROR.getCode(), "该用户被禁用","");
+           return respBody;
+       }
+
+        if("30".equals(useResidentPo.getState())){
+            respBody.add(RespCodeEnum.ERROR.getCode(), "等待管理员审核","");
+            return respBody;
+        }
+
+
        //System.out.print(str);
 
        CodeVo codeVo = new CodeVo();
@@ -700,8 +839,10 @@ public class EquipmentController {
 
     //    System.out.print(JSONObject.parse(str));
       //  Object obj = JSONObject.parse(codeVo);
-        str =  JSON.toJSONString(codeVo);
+        //str =  JSON.toJSONString(codeVo);
 
+        str =  codeVo.getCommunityId()+","+codeVo.getPhone()+","+codeVo.getRoomNumber()+","+codeVo.getTimeStamp()+","+codeVo.getUnitId();
+        //str = "123456,18676487058,0101,1540796022356,0011";
         //String obj1=   JSON.toJSONString(obj);
 
        byte[] data = str.getBytes();
@@ -723,19 +864,114 @@ public class EquipmentController {
     }
 
 
-    @GetMapping("/getEquipmentList")
-    public RespBody getEquipmentList(String  phone){
+    @GetMapping("/getResidentList")
+    public RespBody getResidentList(String  phone) {
         RespBody respBody = new RespBody();
 
 
-       UseResidentPo useResidentPo =    useResidentMapper.findMobile(phone);
+       List<UseResidentVo> list =   useResidentMapper.findMobileList(phone);
+
+//       for(UseResidentVo useResidentVo:list){
+//           if(useResidentVo.getEquCode().length()>=8){
+//               useResidentVo.setIdentityNo(useResidentVo.getCommunityName()+useResidentVo.getEquId());
+//           }else{
+//               useResidentVo.setIdentityNo(useResidentVo.getCommunityName()+useResidentVo.getEquId()+useResidentVo.getUnitNo());
+//
+//           }
+//       }
+
+       if(list.size()==0){
+           respBody.add(RespCodeEnum.ERROR.getCode(), "用户暂未关联住址");
+           return respBody;
+       }
+
+       respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功",list);
+
+        return  respBody;
+    }
+
+
+    @GetMapping("/getResident1")
+    public RespBody getResident1(String  id) {
+        RespBody respBody = new RespBody();
+
+
+        UseResidentVo useResidentVo =   useResidentMapper.findResidentId(id);
+
+
+//        if(useResidentVo!=null){
+//            if(useResidentVo.getEquCode().length()>=8){
+//                useResidentVo.setIdentityNo(useResidentVo.getCommunityName()+useResidentVo.getEquId());
+//            }else{
+//                useResidentVo.setIdentityNo(useResidentVo.getCommunityName()+useResidentVo.getEquId()+useResidentVo.getUnitNo());
+//
+//            }
+//            respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功",useResidentVo);
+//
+//        }else {
+//            respBody.add(RespCodeEnum.ERROR.getCode(), "获取用户数据失败");
+//
+//        }
+
+        respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取用户数据成功",useResidentVo);
+
+
+
+        return  respBody;
+    }
+
+
+    @GetMapping("/getEquipmentList")
+    public RespBody getEquipmentList(String  phone,String id){
+        RespBody respBody = new RespBody();
+
+
+       //UseResidentPo useResidentPo =    useResidentMapper.findMobile(phone);
+        UseResidentPo useResidentPo =  useResidentMapper.findMobileId(phone,id);
+
 
        if(useResidentPo==null){
-           respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号暂未绑定");
+           respBody.add(RespCodeEnum.ERROR.getCode(), "该账号暂未绑定");
+           return respBody;
        }
 
 
+        if("20".equals(useResidentPo.getState())){
+            respBody.add(RespCodeEnum.ERROR.getCode(), "该用户被禁用");
+            return respBody;
+        }
+
+
+        if("30".equals(useResidentPo.getState())){
+            respBody.add(RespCodeEnum.ERROR.getCode(), "等待管理员审核");
+            return respBody;
+        }
+
+
        List<EquipmentOnlineVo>  equlpmentOnlineList =   useEquipmentMapper.findOnlineAll(useResidentPo.getId(),useResidentPo.getCommunityId());
+
+
+        if(equlpmentOnlineList.size()==0){
+            respBody.add(RespCodeEnum.ERROR.getCode(), "该用户没有绑定设备");
+            return respBody;
+        }
+
+        for(EquipmentOnlineVo vo:equlpmentOnlineList){
+            if(vo.getStatus()!=null){
+                if("30".equals(vo.getStatus())){
+                    vo.setStatus("20");
+                }else{
+                    if((new Date().getTime()-vo.getOnlineCreateTime().getTime())/1000>60){
+                        vo.setStatus("20");
+                    }else{
+                        vo.setStatus("10");
+                    }
+
+                }
+
+            }
+        }
+
 
        respBody.add(RespCodeEnum.SUCCESS.getCode(), "获取数据成功",equlpmentOnlineList);
 
@@ -882,73 +1118,102 @@ public class EquipmentController {
                         socket.receive(datagramPacket); //receive是一个阻塞型的方法，没有接收到数据包之前会一直等待。 数据实际上就是存储到了byte的自己数组中了。
                         System.out.println("接收端接收到的数据："+ new String(buf,0,datagramPacket.getLength())); // getLength() 获取数据包存储了几个字节。
                         System.out.println("接收端接收到的数据："+datagramPacket.getData()); // getLength() 获取数据包存储了几个字节。
-                        System.out.println("receive阻塞了我，哈哈"+datagramPacket.getAddress()+":"+datagramPacket.getPort());
+
+
+
+
+
+
+
 
                         //String[] recordList = new String(buf,0,datagramPacket.getLength()).split(",",-1);
 
 
                         //{"deviceCode":"200311","cmd":"heart","communityId":"123456"}
 
-                        JSONObject jsStr = JSONObject.parseObject(new String(buf,0,datagramPacket.getLength()));
 
+                        if(!(new String(buf,0,datagramPacket.getLength()).indexOf("deviceCode")>0)){
 
-
-                         String  equNo1 = jsStr.getString("deviceCode");
-                         String cmd1  = jsStr.getString("cmd");
-                         String communityNo1 = jsStr.getString("communityId");
-
-
-                         System.out.println("equNo1="+equNo1+",cmd1="+cmd1+",communityNo1="+communityNo1);
-
-                         UseCommunityVo useCommunityVo =  useCommunityMapper.findCommunityNo(communityNo1);
-
-                        UseEquipmentVo useEquipmentVo =    useEquipmentMapper.selectEquipmentNo(equNo1,useCommunityVo.getId());
-
-                        //doData(datagramPacket.getData());
-                        //UseEquipmentPortPo portPo = new UseEquipmentPortPo();
-                        useEquipmentPortMapper.update(String.valueOf(datagramPacket.getAddress()).substring(1,String.valueOf(datagramPacket.getAddress()).length()),datagramPacket.getPort()+"",useEquipmentVo.getId());
-
-
-
-                        //修改开锁状态
-//                        if("unlockack".equals(cmd1)){
-//                            String phone = jsStr.getString("phone");
-//                            String roomNumber = jsStr.getString("roomNumber");
-//
-//                            useLockUdpMapper.updateStatus(phone,roomNumber);
-//                        }
-
-
-                        UseEquipmentNowStatePo nowStatePo =   useEquipmentNowStateMapper.findOne(equNo1,useEquipmentVo.getId());
-                        if(nowStatePo == null){
-                            respBody.add(RespCodeEnum.SUCCESS.getCode(), "error");
-                            byte[] bs = "error".getBytes();//要发的信息内容
-                            //UDPA与UDPB的ip均为本机ip，故设置不同的端口号
-                            InetAddress desIp = InetAddress.getByName(datagramPacket.getAddress().toString().substring(1,datagramPacket.getAddress().toString().length()));
-
-                            System.out.println("desIp"+desIp);
-                            DatagramPacket p = new DatagramPacket(bs, bs.length, desIp, datagramPacket.getPort());
-                            socket.send(p);
                         }else{
-                            respBody.add(RespCodeEnum.SUCCESS.getCode(), nowStatePo.getState());
+                            System.out.println("receive阻塞了我，哈哈"+datagramPacket.getAddress()+":"+datagramPacket.getPort());
+                            JSONObject jsStr = JSONObject.parseObject(new String(buf,0,datagramPacket.getLength()));
 
-                            nowStatePo.setUpdateTime(new Date());
-                            nowStatePo.setState("10");
-                            useEquipmentNowStateMapper.updateByPrimaryKey(nowStatePo);
 
-                            UseEquipmentNowStateVo1 nowStateVo = new UseEquipmentNowStateVo1();
-                            nowStateVo.setDeviceCode(nowStatePo.getEquipmentNo());
-                            nowStateVo.setResult("0");
-                            nowStateVo.setCmd("heartack");
 
-                            byte[] bs = JSON.toJSONString(nowStateVo).getBytes();//要发的信息内容
-                            //UDPA与UDPB的ip均为本机ip，故设置不同的端口号
-                            InetAddress desIp = InetAddress.getByName(datagramPacket.getAddress().toString().substring(1,datagramPacket.getAddress().toString().length()));
+                            String  equNo1 = jsStr.getString("deviceCode");
+                            String cmd1  = jsStr.getString("cmd");
+                            String communityNo1 = jsStr.getString("communityId");
 
-                            System.out.println("desIp"+desIp);
-                            DatagramPacket p = new DatagramPacket(bs, bs.length, desIp, datagramPacket.getPort());
-                            socket.send(p);
+
+                            System.out.println("equNo1="+equNo1+",cmd1="+cmd1+",communityNo1="+communityNo1);
+
+                            UseCommunityVo useCommunityVo =  useCommunityMapper.findCommunityNo(communityNo1);
+
+
+                            if(useCommunityVo==null){
+                                continue;
+                            }
+
+                            UseEquipmentVo useEquipmentVo =  useEquipmentMapper.selectEquipmentNo(equNo1,useCommunityVo.getId());
+                            if(useEquipmentVo==null){
+                                continue;
+                            }
+
+                            //doData(datagramPacket.getData());
+                            //UseEquipmentPortPo portPo = new UseEquipmentPortPo();
+                            useEquipmentPortMapper.update(String.valueOf(datagramPacket.getAddress()).substring(1,String.valueOf(datagramPacket.getAddress()).length()),datagramPacket.getPort()+"",useEquipmentVo.getId());
+
+
+
+                            //修改开锁状态
+                            if("unlockack".equals(cmd1)){
+                                String phone = jsStr.getString("phone");
+                                String roomNumber = jsStr.getString("roomNumber");
+                                String id = jsStr.getString("id");
+
+                                //useLockUdpMapper.updateStatus(phone,roomNumber);
+                                useLockUdpMapper.updateStatusOne(id);
+                            }
+
+
+                            UseEquipmentNowStatePo nowStatePo =   useEquipmentNowStateMapper.findOne(equNo1,useEquipmentVo.getId());
+                            if(nowStatePo == null){
+                                respBody.add(RespCodeEnum.SUCCESS.getCode(), "error");
+                                byte[] bs = "error".getBytes();//要发的信息内容
+                                //UDPA与UDPB的ip均为本机ip，故设置不同的端口号
+                                InetAddress desIp = InetAddress.getByName(datagramPacket.getAddress().toString().substring(1,datagramPacket.getAddress().toString().length()));
+
+                                System.out.println("desIp"+desIp);
+                                DatagramPacket p = new DatagramPacket(bs, bs.length, desIp, datagramPacket.getPort());
+                                socket.send(p);
+                            }else{
+                                respBody.add(RespCodeEnum.SUCCESS.getCode(), nowStatePo.getState());
+
+                                nowStatePo.setUpdateTime(new Date());
+                                nowStatePo.setState("10");
+                                useEquipmentNowStateMapper.updateByPrimaryKey(nowStatePo);
+
+                                UseEquipmentNowStateVo1 nowStateVo = new UseEquipmentNowStateVo1();
+                                nowStateVo.setDeviceCode(nowStatePo.getEquipmentNo());
+                                nowStateVo.setResult("0");
+                                nowStateVo.setCmd("heartack");
+
+                                byte[] bs = JSON.toJSONString(nowStateVo).getBytes();//要发的信息内容
+                                //UDPA与UDPB的ip均为本机ip，故设置不同的端口号
+                                InetAddress desIp = InetAddress.getByName(datagramPacket.getAddress().toString().substring(1,datagramPacket.getAddress().toString().length()));
+
+                                System.out.println("desIp"+desIp);
+                                DatagramPacket p = new DatagramPacket(bs, bs.length, desIp, datagramPacket.getPort());
+                                socket.send(p);
+                            }
+
+
+
+
                         }
+
+
+
 
                         //关闭资源
                       //  socket.close();

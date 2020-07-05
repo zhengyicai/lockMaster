@@ -4,17 +4,18 @@
 <mapper namespace="com.qzi.cms.server.mapper.UseEquipmentMapper">
    <!-- 条件分页查询 -->
 	<select id="findAll" resultType="UseEquipmentVo" parameterType="String">
-		SELECT ue.*,uc.communityName from use_equipment ue
-			LEFT JOIN use_community uc on ue.communityId = uc.id 
-
+		SELECT ue.*,uc.communityName,un.state as onlineState,un.updateTime as onlineCreateTime from use_equipment ue
+			LEFT JOIN use_community uc on ue.communityId = uc.id
+		    LEFT JOIN use_equipment_nowState un on  ue.id = un.equipmentId
 		<where>
 			ue.communityId in (select communityId from use_community_user where userId=#{uid})
 			<if test="criteria != null and criteria !=''">
 				<bind name="pun" value="'%'+_parameter.criteria+'%'"/>
 				and (ue.equipmentId like #{pun})
 			</if>
+				and ue.top1 not in ('0','5','6')
 		</where>
-		order by createTime desc
+		order by ue.timestrap asc
 	</select>
    
 	<select id="findCount" resultType="long" parameterType="String">
@@ -25,6 +26,7 @@
 				<bind name="pun" value="'%'+_parameter.criteria+'%'"/>
 				and (equipmentId like #{pun})
 			</if>
+				and top1 not in ('0','5','6')
 		</where>
 	</select>
 </mapper>

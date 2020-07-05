@@ -91,6 +91,16 @@ public class EquipmentOnlineVo {
 
     private String residentId;
 
+    private Date onlineCreateTime;
+
+    public Date getOnlineCreateTime() {
+        return onlineCreateTime;
+    }
+
+    public void setOnlineCreateTime(Date onlineCreateTime) {
+        this.onlineCreateTime = onlineCreateTime;
+    }
+
     public String getId() {
         return id;
     }

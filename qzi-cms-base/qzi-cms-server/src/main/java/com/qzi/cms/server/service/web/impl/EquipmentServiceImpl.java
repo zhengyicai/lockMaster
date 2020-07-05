@@ -112,6 +112,7 @@ public class EquipmentServiceImpl implements EquipmentService {
 		equipmentPo.setId(equIe);
 		equipmentPo.setCreateTime(new Date());
 		equipmentPo.setEquipmentId(generatorEquId(equipmentVo));
+		equipmentPo.setTop1(equipmentVo.getTop1());
 		if(!EquipmentEnum.UNIT.getCode().equals(equipmentVo.getEquipmentType())){
 			equipmentPo.setBuildingId(null);
 			equipmentPo.setUnitName(null);
@@ -183,7 +184,7 @@ public class EquipmentServiceImpl implements EquipmentService {
 		nowStatePo.setId(ToolUtils.getUUID());
 		nowStatePo.setEquipmentId(equIe);
 		nowStatePo.setEquipmentNo(compo.getCommunityNo()+equipmentVo.getEquNo());
-		nowStatePo.setState("20");
+		nowStatePo.setState("30");
 		nowStatePo.setUpdateTime(new Date());
 		useEquipmentNowStateMapper.insert(nowStatePo);
 
@@ -235,6 +236,8 @@ public class EquipmentServiceImpl implements EquipmentService {
 		po1.setUpdateTime(new Date());
 		po1.setEquCode(po.getEquCode());
 		po1.setEquId(po.getEquId());
+		po1.setTop1(po.getTop1());
+		po1.setTimestrap(new Date().getTime()+"");
 
 		equipmentMapper.insert(po1);
 
@@ -244,7 +247,7 @@ public class EquipmentServiceImpl implements EquipmentService {
 		nowStatePo.setId(ToolUtils.getUUID());
 		nowStatePo.setEquipmentId(equIe);
 		nowStatePo.setEquipmentNo(po.getEquipmentId());
-		nowStatePo.setState("20");
+		nowStatePo.setState("30");
 		nowStatePo.setUpdateTime(new Date());
 		useEquipmentNowStateMapper.insert(nowStatePo);
 

@@ -96,6 +96,10 @@ public class UserController {
 	private UseResidentMapper useResidentMapper;
 
 
+	@Resource
+	private SysUserMapper sysUserMapper;
+
+
 
 
 	@GetMapping("/findUser")
@@ -157,7 +161,7 @@ public class UserController {
 		RespBody respBody = new RespBody();
 		try {
 			//保存返回数据
-			respBody.add(RespCodeEnum.SUCCESS.getCode(), "查找所有用户信息数据成功", userService.findRoleAll(paging));
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "查找所有用户信息数据成功", userService.findAllChild(parentId,paging));
 			//保存分页对象
 			paging.setTotalCount(userService.findAllChildCount(parentId));
 			respBody.setPage(paging);
@@ -304,6 +308,19 @@ public class UserController {
 		}
 		return respBody;
 	}
+
+	@PostMapping("/updateStatus")
+	public RespBody updateStatus(@RequestBody SysUserVo userVo){
+
+		RespBody respBody = new RespBody();
+
+
+		sysUserMapper.updateState(userVo.getState(),userVo.getLoginName());
+
+		respBody.add(RespCodeEnum.SUCCESS.getCode(), "状态修改成功");
+		return respBody;
+
+	}
 	
 	@PostMapping("/update")
 	public RespBody update(@RequestBody SysUserVo userVo){
@@ -317,6 +334,7 @@ public class UserController {
 				respBody.add(RespCodeEnum.SUCCESS.getCode(), "用户信息修改成功");
 			}else{
 				if(findUser.getId().equals(userVo.getId())){
+
 					userService.update(userVo);
 					respBody.add(RespCodeEnum.SUCCESS.getCode(), "用户信息修改成功");
 				}else{

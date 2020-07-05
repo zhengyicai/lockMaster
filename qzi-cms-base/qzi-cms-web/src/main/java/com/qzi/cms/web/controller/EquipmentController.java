@@ -22,6 +22,7 @@ import com.qzi.cms.common.util.YBBeanUtils;
 import com.qzi.cms.common.vo.CommunityAdminVo;
 import com.qzi.cms.common.vo.SysUserVo;
 import com.qzi.cms.common.vo.UseLockRecordVo;
+import com.qzi.cms.server.mapper.UseCommunityMapper;
 import com.qzi.cms.server.mapper.UseEquipmentMapper;
 import com.qzi.cms.server.mapper.UseEquipmentNowStateMapper;
 import com.qzi.cms.server.mapper.UseEquipmentPortMapper;
@@ -77,6 +78,9 @@ public class EquipmentController {
 
 	@Resource
 	private RedisService redisService;
+
+	@Resource
+	private UseCommunityMapper useCommunityMapper;
 
 
 
@@ -144,12 +148,19 @@ public class EquipmentController {
 
 		  List<UseEquipmentVo> list =  equipmentService.findAll(paging,criteria);
 		  for(UseEquipmentVo vo:list){
-			  if(vo.getNowDate()!=null){
-				  if((new Date().getTime()-vo.getNowDate().getTime())/1000>60){
-				  				  vo.setNowDateStatus("离线");
-				  			  }else{
-				  				  vo.setNowDateStatus("在线");
+			  if(vo.getOnlineCreateTime()!=null){
+
+				  if((new Date().getTime()-vo.getOnlineCreateTime().getTime())/1000>60){
+				  				  vo.setNowDateStatus("20");
+				  }else{
+				  				  vo.setNowDateStatus("10");
 				   }
+
+				   //初始化
+				   if("30".equals(vo.getOnlineState())){
+                       vo.setNowDateStatus("20");
+                   }
+
 			  }
 		  }
 
@@ -292,34 +303,191 @@ public class EquipmentController {
 								System.out.println("mask" + child.elementText("mask"));
 								//这行是为了格式化美观而存在
 
-								UseEquipmentPo po = new UseEquipmentPo();
-								po.setEquipmentId(child.elementText("code"));
-								po.setEquipmentName(child.elementText("name"));
-								po.setEname(child.elementText("ename"));
-								po.setIp(child.elementText("ip"));
-								po.setGate(child.elementText("gate"));
-								po.setMask(child.elementText("mask"));
-								po.setCommunityId(useEquipmentPo.getCommunityId());
-								po.setState("10");
 
 
+								//判断是否存在的数据
+								UseEquipmentPo useEquipmentPo1 = useEquipmentMapper.findOne1(child.elementText("code"),useEquipmentPo.getCommunityId());
+								if(useEquipmentPo1!=null){
 
-								if(child.elementText("code").length()==6){
-									po.setEquCode(child.elementText("code").substring(1,child.elementText("code").length()-1));
-									if("0000".equals(po.getEquCode())){
-										po.setEquId("");
-									}else{
-										po.setEquId(po.getEquCode().substring(0,3)+"栋"+po.getEquCode().substring(3,4)+"单元");
+									useEquipmentPo1.setTimestrap(new Date().getTime()+"");
+									useEquipmentPo1.setEquipmentName(child.elementText("name"));
+									useEquipmentPo1.setEname(child.elementText("ename"));
+									useEquipmentPo1.setIp(child.elementText("ip"));
+									useEquipmentPo1.setGate(child.elementText("gate"));
+									useEquipmentPo1.setMask(child.elementText("mask"));
+									useEquipmentMapper.updateByPrimaryKey(useEquipmentPo1);
+								}else {
+
+									UseEquipmentPo po = new UseEquipmentPo();
+									po.setEquipmentId(child.elementText("code"));
+									po.setEquipmentName(child.elementText("name"));
+									po.setEname(child.elementText("ename"));
+									po.setIp(child.elementText("ip"));
+									po.setGate(child.elementText("gate"));
+									po.setMask(child.elementText("mask"));
+									po.setCommunityId(useEquipmentPo.getCommunityId());
+									po.setState("10");
+									po.setTop1(po.getEquipmentId().substring(0, 1));
+
+									if (child.elementText("code").length() == 6) {
+										po.setEquCode(child.elementText("code").substring(1, child.elementText("code").length() - 1));
+										if ("0000".equals(po.getEquCode())) {
+											po.setEquId("");
+										} else {
+											po.setEquId(po.getEquCode().substring(0, 3) + "栋" + po.getEquCode().substring(3, 4) + "单元");
+										}
+
+									} else if (child.elementText("code").length() == 11) {
+										po.setEquCode(child.elementText("code").substring(1, child.elementText("code").length() - 2));
+										po.setEquId(po.getEquCode().substring(0, 3) + "栋" + po.getEquCode().substring(3, 4) + "单元" + po.getEquCode().substring(4, 8) + "房别墅");
+									} else {
+										po.setEquCode("");
 									}
 
-								}else if(child.elementText("code").length()==11){
-									po.setEquCode(child.elementText("code").substring(1,child.elementText("code").length()-2));
-									po.setEquId(po.getEquCode().substring(0,3)+"栋"+po.getEquCode().substring(3,4)+"单元"+po.getEquCode().substring(4,8)+"房");
-								}else{
-									po.setEquCode("");
+									equipmentService.add(po);
+
 								}
 
-								equipmentService.add(po);
+
+							}
+
+						}
+					} catch (DocumentException e) {
+						e.printStackTrace();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+
+					System.out.println("存放图片文件的路径:"+path);
+
+					respBody.add(RespCodeEnum.SUCCESS.getCode(), "添加成功",trueFileName);
+				}else {
+					System.out.println("不是我们想要的文件类型,请按要求重新上传");
+					respBody.add(RespCodeEnum.ERROR.getCode(), "文件类型不对，请重新上传");
+					return respBody;
+				}
+			}else {
+				System.out.println("文件类型为空");
+				respBody.add(RespCodeEnum.ERROR.getCode(), "文件类型为空");
+				return respBody;
+			}
+		}else {
+			System.out.println("没有找到相对应的文件");
+			respBody.add(RespCodeEnum.ERROR.getCode(), "没有找到相对应的文件");
+			return respBody;
+		}
+		return respBody;
+	}
+
+
+
+	@ResponseBody
+	@RequestMapping(value = "/updateUpload",method = RequestMethod.POST)
+	public RespBody updateUpload(@RequestPart("file") MultipartFile file,UseEquipmentPo useEquipmentPo, HttpServletRequest request, HttpServletResponse response, HttpSession session) throws IllegalStateException, IOException {
+		RespBody respBody=new RespBody();
+
+
+
+		if (file!=null) {// 判断上传的文件是否为空
+			String path=null;// 文件路径
+			String type=null;// 文件类型
+			String fileName=file.getOriginalFilename();// 文件原名称
+			System.out.println("上传的文件原名称:"+fileName);
+			// 判断文件类型
+			type=fileName.indexOf(".")!=-1?fileName.substring(fileName.lastIndexOf(".")+1, fileName.length()):null;
+			if (type!=null) {// 判断文件类型是否为空
+				if ("XML".equals(type.toUpperCase())||"xml".equals(type.toUpperCase())) {
+
+
+
+
+					// 项目在容器中实际发布运行的根路径
+					String realPath=request.getSession().getServletContext().getRealPath("/");
+
+					// 自定义的文件名称
+					String trueFileName=String.valueOf(System.currentTimeMillis())+"."+type.toUpperCase();
+					// 设置存放图片文件的路径
+
+
+
+					//path = "/data/page/uploadImages/"+po.getUserName()+"/"+/*System.getProperty("file.separator")+*/trueFileName;
+					path = realPath+/*System.getProperty("file.separator")+*/trueFileName;
+
+
+					//保存文件
+					file.transferTo(new File(path));
+
+					//liunx密令
+					// Runtime.getRuntime().exec("chmod 777 -R " +"/data/page/uploadImages/"+trueFileName);
+
+
+
+					SAXReader reader = new SAXReader();
+					File file1 = new File(path);
+					Document document = null;
+					try {
+						document = reader.read(file1);
+						Element root = document.getRootElement();
+						List<Element> childElements = root.elements();
+
+						//获取当前用户的小区
+
+
+
+
+						for (Element child : childElements) {
+
+
+
+
+							if("item".equals(child.getName())){
+
+								UseEquipmentPo useEquipmentPo1 = useEquipmentMapper.findOne1(child.elementText("code"),useEquipmentPo.getCommunityId());
+								if(useEquipmentPo1!=null){
+
+									useEquipmentPo.setTimestrap(new Date().getTime()+"");
+									useEquipmentPo.setEquipmentName(child.elementText("name"));
+									useEquipmentPo.setEname(child.elementText("ename"));
+									useEquipmentPo.setIp(child.elementText("ip"));
+									useEquipmentPo.setGate(child.elementText("gate"));
+									useEquipmentPo.setMask(child.elementText("mask"));
+									useEquipmentMapper.updateByPrimaryKey(useEquipmentPo);
+								}else{
+
+									UseEquipmentPo po = new UseEquipmentPo();
+									po.setEquipmentId(child.elementText("code"));
+									po.setEquipmentName(child.elementText("name"));
+									po.setEname(child.elementText("ename"));
+									po.setIp(child.elementText("ip"));
+									po.setGate(child.elementText("gate"));
+									po.setMask(child.elementText("mask"));
+									po.setCommunityId(useEquipmentPo.getCommunityId());
+									po.setState("10");
+									po.setTop1(po.getEquipmentId().substring(0,1));
+
+									if(child.elementText("code").length()==6){
+										po.setEquCode(child.elementText("code").substring(1,child.elementText("code").length()-1));
+										if("0000".equals(po.getEquCode())){
+											po.setEquId("");
+										}else{
+											po.setEquId(po.getEquCode().substring(0,3)+"栋"+po.getEquCode().substring(3,4)+"单元");
+										}
+
+									}else if(child.elementText("code").length()==11){
+										po.setEquCode(child.elementText("code").substring(1,child.elementText("code").length()-2));
+										po.setEquId(po.getEquCode().substring(0,3)+"栋"+po.getEquCode().substring(3,4)+"单元"+po.getEquCode().substring(4,8)+"房别墅");
+									}else{
+										po.setEquCode("");
+									}
+
+									equipmentService.add(po);
+
+
+
+								}
+
+
 
 
 
@@ -446,10 +614,13 @@ public class EquipmentController {
 		try {
 			//保存返回数据
 
+			UseCommunityPo useCommunityPo =   useCommunityMapper.findOne(communityId);
+
 			UseLockRecordVo vo = new UseLockRecordVo();
-			vo.setMobile(criteria);
-			vo.setUserId(sysUserId);
-			vo.setCommunityId(communityId);
+			vo.setPhone(criteria);
+			vo.setCommunityId(useCommunityPo.getCommunityNo());
+
+
 
 			List<UseLockRecordVo> list =  webLockRecordService.findAll(vo,paging);
 

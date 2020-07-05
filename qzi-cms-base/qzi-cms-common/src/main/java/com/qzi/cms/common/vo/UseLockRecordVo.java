@@ -10,12 +10,11 @@ public class UseLockRecordVo {
      /*
       * 主键编号
      */
-    @Id
-    private String id;
+     private String id;
 
     private String communityId;
 
-    private String roomNo;
+    private String cardId;
 
     private String userId;
 
@@ -25,39 +24,17 @@ public class UseLockRecordVo {
 
     private String state;
 
-    private String communityName;
-
-    private String mobile;
-
-    private String mobile1;
-
-    private String createTimeStr;
-
     private String equipmentId;
 
-    public String getEquipmentId() {
-        return equipmentId;
-    }
+    private String deviceCode;
+    private String type;
+    private String result;
+    private String unlockTime;
+    private String roomNumber;
+    private String phone;
 
-    public void setEquipmentId(String equipmentId) {
-        this.equipmentId = equipmentId;
-    }
-
-    public String getCreateTimeStr() {
-        return createTimeStr;
-    }
-
-    public void setCreateTimeStr(String createTimeStr) {
-        this.createTimeStr = createTimeStr;
-    }
-
-    public String getMobile1() {
-        return mobile1;
-    }
-
-    public void setMobile1(String mobile1) {
-        this.mobile1 = mobile1;
-    }
+    private String file;
+    private String equipmentName;
 
     public String getId() {
         return id;
@@ -75,12 +52,12 @@ public class UseLockRecordVo {
         this.communityId = communityId;
     }
 
-    public String getRoomNo() {
-        return roomNo;
+    public String getCardId() {
+        return cardId;
     }
 
-    public void setRoomNo(String roomNo) {
-        this.roomNo = roomNo;
+    public void setCardId(String cardId) {
+        this.cardId = cardId;
     }
 
     public String getUserId() {
@@ -115,19 +92,75 @@ public class UseLockRecordVo {
         this.state = state;
     }
 
-    public String getCommunityName() {
-        return communityName;
+    public String getEquipmentId() {
+        return equipmentId;
     }
 
-    public void setCommunityName(String communityName) {
-        this.communityName = communityName;
+    public void setEquipmentId(String equipmentId) {
+        this.equipmentId = equipmentId;
     }
 
-    public String getMobile() {
-        return mobile;
+    public String getDeviceCode() {
+        return deviceCode;
     }
 
-    public void setMobile(String mobile) {
-        this.mobile = mobile;
+    public void setDeviceCode(String deviceCode) {
+        this.deviceCode = deviceCode;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public String getUnlockTime() {
+        return unlockTime;
+    }
+
+    public void setUnlockTime(String unlockTime) {
+        this.unlockTime = unlockTime;
+    }
+
+    public String getRoomNumber() {
+        return roomNumber;
+    }
+
+    public void setRoomNumber(String roomNumber) {
+        this.roomNumber = roomNumber;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
+    }
+
+    public String getEquipmentName() {
+        return equipmentName;
+    }
+
+    public void setEquipmentName(String equipmentName) {
+        this.equipmentName = equipmentName;
     }
 }

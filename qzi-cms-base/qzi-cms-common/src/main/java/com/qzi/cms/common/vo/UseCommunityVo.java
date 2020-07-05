@@ -93,6 +93,11 @@ public class UseCommunityVo {
 	private String  userName;
 
 	/**
+	 * 用户名
+	 */
+	private String  loginName;
+
+	/**
 	 * 物业状态
 	 * @return
 	 */
@@ -350,5 +355,13 @@ public class UseCommunityVo {
 	 */
 	public void setAddress(String address) {
 		this.address = address;
+	}
+
+	public String getLoginName() {
+		return loginName;
+	}
+
+	public void setLoginName(String loginName) {
+		this.loginName = loginName;
 	}
 }

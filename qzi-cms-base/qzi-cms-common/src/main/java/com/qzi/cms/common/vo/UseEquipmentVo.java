@@ -141,6 +141,36 @@ public class UseEquipmentVo {
 	private String mask;
 	private String ename;
 
+	private String onlineState;
+	private Date onlineCreateTime;
+
+
+	private String top1;
+
+
+	public String getTop1() {
+		return top1;
+	}
+
+	public void setTop1(String top1) {
+		this.top1 = top1;
+	}
+
+	public String getOnlineState() {
+		return onlineState;
+	}
+
+	public void setOnlineState(String onlineState) {
+		this.onlineState = onlineState;
+	}
+
+	public Date getOnlineCreateTime() {
+		return onlineCreateTime;
+	}
+
+	public void setOnlineCreateTime(Date onlineCreateTime) {
+		this.onlineCreateTime = onlineCreateTime;
+	}
 
 	public String getIp() {
 		return ip;

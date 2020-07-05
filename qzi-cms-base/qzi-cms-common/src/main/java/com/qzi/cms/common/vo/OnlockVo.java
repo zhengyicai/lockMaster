@@ -10,6 +10,16 @@ public class OnlockVo {
     private String cmd;
     private String phone;
     private String roomNumber;
+    private String id;
+
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getCommunityId() {
         return communityId;

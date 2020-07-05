@@ -155,10 +155,10 @@ public interface UseEquipmentMapper extends BaseMapper<UseEquipmentPo>{
 	@Delete("delete from use_equipment where communityId=#{communityId}")
 	public void deleteAll(@Param("communityId") String communityId);
 
-	@Select("select * from use_equipment r right join (select  min(id) as id, equCode from use_equipment where equCode!='0000'   GROUP BY  equCode) t1 on  r.id = t1.id where communityId=#{communityId}")
+	@Select("select * from use_equipment r right join (select  min(id) as id, equCode from use_equipment where  communityId=#{communityId} and equCode!='0000'   GROUP BY  equCode) t1 on  r.id = t1.id where  r.top1 not in ('0','5','6')")
 	public List<UseEquipmentVo> selectUserAll(@Param("communityId") String communityId);
 
-	@Select("select * from use_equipment where (equCode='0000' or equCode=#{equCode}) and  communityId=#{communityId}")
+	@Select("select * from use_equipment where (top1='1' or equCode=#{equCode}) and  communityId=#{communityId} and top1 not in ('0','5','6')")
 	public List<UseEquipmentVo> selectUserPublic(@Param("equCode") String equCode,@Param("communityId") String communityId);
 
 
@@ -170,6 +170,12 @@ public interface UseEquipmentMapper extends BaseMapper<UseEquipmentPo>{
     public UseEquipmentVo selectEquipmentOne(@Param("equipmentId") String equipmentId,@Param("communityNo") String communityNo);
 
 
-	@Select("select  uq.*,uc.communityName ,un.state as 'status' from use_resident_equipment re  left join use_equipment  uq  on re.equipmentId = uq.id inner join use_community uc on re.communityId = uc.id inner join  use_equipment_nowState un on re.equipmentId =  un.equipmentId where re.residentId = #{residentId} and re.communityId=#{communityId}")
+
+	@Select("select * from use_equipment where equipmentId=#{equipmentId} and communityId=#{communityId} limit 1")
+	public UseEquipmentPo findOne1(@Param("equipmentId") String equipmentId,@Param("communityId") String communityId);
+
+
+
+	@Select("select  uq.*,uc.communityName ,un.state as 'status',un.updateTime as 'onlineCreateTime' from use_resident_equipment re  left join use_equipment  uq  on re.equipmentId = uq.id inner join use_community uc on re.communityId = uc.id inner join  use_equipment_nowState un on re.equipmentId =  un.equipmentId where re.residentId = #{residentId} and re.communityId=#{communityId} and uq.top1 not in ('0','5','6') order by timestrap asc")
 	public List<EquipmentOnlineVo> findOnlineAll(@Param("residentId") String residentId,@Param("communityId") String communityId);
 }

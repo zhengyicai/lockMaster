@@ -93,6 +93,10 @@ public interface SysUserMapper extends BaseMapper<SysUserPo>{
 	public void updatePassword(@Param("password")String password,@Param("id") String id);
 
 
+	@Update("update sys_user set state=#{state}  where loginName = #{loginName} ")
+	public void updateState(@Param("state")String state,@Param("loginName") String loginName);
+
+
 	/**
 	 * 2018-11-16
 	 * 查找该用户

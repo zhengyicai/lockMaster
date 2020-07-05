@@ -9,11 +9,13 @@ package com.qzi.cms.web.controller;
 
 import javax.annotation.Resource;
 
+import com.qzi.cms.common.po.UseCommunityPo;
 import com.qzi.cms.common.po.UseResidentCardPo;
 import com.qzi.cms.common.po.UseResidentEquipmentPo;
 import com.qzi.cms.common.po.UseResidentPo;
 import com.qzi.cms.common.util.ToolUtils;
 import com.qzi.cms.common.vo.TreeVo;
+import com.qzi.cms.common.vo.UseEquipmentVo;
 import com.qzi.cms.server.mapper.*;
 import com.qzi.cms.server.service.common.CommonService;
 import com.qzi.cms.server.service.web.BuildingService;
@@ -81,6 +83,12 @@ public class ResidentController {
 	@Resource
 	private UseUnlockEquRecordMapper useUnlockEquRecordMapper;
 
+	@Resource
+	private UseEquipmentMapper  useEquipmentMapper;
+
+	@Resource
+	private UseCommunityMapper useCommunityMapper;
+
 
 
 
@@ -122,13 +130,13 @@ public class ResidentController {
 	 */
 
 	@GetMapping("/residentList")
-	public RespBody residentList(Paging paging,String criteria){
+	public RespBody residentList(Paging paging,String criteria,String communityId){
 		RespBody respBody = new RespBody();
 		try {
 			//保存返回数据
-			respBody.add(RespCodeEnum.SUCCESS.getCode(), "查找所有住户数据成功", residentService.residentList(paging,criteria));
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "查找所有住户数据成功", residentService.residentList(paging,criteria,communityId));
 			//保存分页对象
-			paging.setTotalCount(residentService.residentCount(criteria));
+			paging.setTotalCount(residentService.residentCount(criteria,communityId));
 			respBody.setPage(paging);
 		} catch (Exception ex) {
 			respBody.add(RespCodeEnum.ERROR.getCode(), "查找所有住户数据失败");
@@ -231,6 +239,59 @@ public class ResidentController {
 		return respBody;
 	}
 
+	@PostMapping("/updateUser")
+	@SystemControllerLog(description="修改住户信息")
+	public RespBody updateUser(@RequestBody UseResidentPo residentPo){
+		RespBody respBody = new RespBody();
+
+		UseResidentPo useResidentPo =   useResidentMapper.findOne(residentPo.getId());
+		useResidentPo.setUnitNo(residentPo.getUnitNo());
+		useResidentPo.setEquipmentId(residentPo.getEquipmentId());
+
+
+		UseCommunityPo useCommunityPo  =   useCommunityMapper.findOne(useResidentPo.getCommunityId());
+		UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(useResidentPo.getEquipmentId());
+		useResidentPo.setIdentityNo(useCommunityPo.getCommunityName()+useEquipmentPo.getEquId()+useResidentPo.getUnitNo());
+
+		//useResidentMapper.insert(useResidentPo);
+		useResidentMapper.updateByPrimaryKey(useResidentPo);
+
+		useResidentEquipmentMapper.deleteResident(residentPo.getId(),residentPo.getCommunityId());
+
+		//UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(residentPo.getEquipmentId());
+
+
+
+
+
+		if(useEquipmentPo==null){
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "没有找到该小区对应的设备");
+			return  respBody;
+		}
+
+
+
+
+		UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
+		//添加公共设备
+		List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useEquipmentPo.getEquCode(),residentPo.getCommunityId());
+		for(int i = 0;i<list1.size();i++){
+			useResidentEquipmentPo.setId(ToolUtils.getUUID());
+			useResidentEquipmentPo.setCommunityId(residentPo.getCommunityId());
+			useResidentEquipmentPo.setState("10");
+			useResidentEquipmentPo.setResidentId(residentPo.getId());
+			useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
+			useResidentEquipmentMapper.insert(useResidentEquipmentPo);
+		}
+
+
+
+
+		return  respBody;
+	}
+
+
+
 
 	/*添加用户*/
 
@@ -266,8 +327,61 @@ public class ResidentController {
 			useResidentPo.setClientPwd("");
 			useResidentPo.setLoginToken("");
 			useResidentPo.setOpenPwd("");
+
+			useResidentPo.setEquipmentId(residentPo.getEquipmentId());
+			useResidentPo.setUnitNo(residentPo.getUnitNo());
+
+
 			useResidentPo.setCommunityId(residentPo.getCommunityId());
+
+//			if(useResidentMapper.findMobile(residentPo.getMobile())!=null){
+//				respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号已经绑定过");
+//				return respBody;
+//			}
+
+			//useResidentMapper.insert(useResidentPo);
+
+			useResidentEquipmentMapper.deleteResident(id,useResidentPo.getCommunityId());
+
+
+
+
+			//修改房间号
+			//useResidentMapper.openPwd(useUserCardVo.getId(),useUserCardVo.getCardNo());
+
+
+
+			UseEquipmentVo useEquipmentPo =   useEquipmentMapper.findId(useResidentPo.getEquipmentId());
+
+
+
+			UseCommunityPo useCommunityPo  =   useCommunityMapper.findOne(useResidentPo.getCommunityId());
+
+			useResidentPo.setIdentityNo(useCommunityPo.getCommunityName()+useEquipmentPo.getEquId()+useResidentPo.getUnitNo());
+
 			useResidentMapper.insert(useResidentPo);
+
+			if(useEquipmentPo==null){
+				respBody.add(RespCodeEnum.SUCCESS.getCode(), "没有找到该小区对应的设备");
+				return  respBody;
+			}
+
+
+
+
+			UseResidentEquipmentPo useResidentEquipmentPo = new UseResidentEquipmentPo();
+			//添加公共设备
+			List<UseEquipmentVo> list1 =    useEquipmentMapper.selectUserPublic(useEquipmentPo.getEquCode(),useResidentPo.getCommunityId());
+			for(int i = 0;i<list1.size();i++){
+				useResidentEquipmentPo.setId(ToolUtils.getUUID());
+				useResidentEquipmentPo.setCommunityId(useResidentPo.getCommunityId());
+				useResidentEquipmentPo.setState("10");
+				useResidentEquipmentPo.setResidentId(useResidentPo.getId());
+				useResidentEquipmentPo.setEquipmentId(list1.get(i).getId());
+				useResidentEquipmentMapper.insert(useResidentEquipmentPo);
+			}
+
+
 
 
 			respBody.add(RespCodeEnum.SUCCESS.getCode(), "住户数据保存成功");
@@ -293,15 +407,15 @@ public class ResidentController {
 	}
 	
 	@PostMapping("/delete")
-	@SystemControllerLog(description="删除住户")
+	@SystemControllerLog(description="销毁住户")
 	public RespBody delete(@RequestBody UseResidentVo residentVo){
 		RespBody respBody = new RespBody();
 		try {
 			residentService.delete(residentVo);
-			respBody.add(RespCodeEnum.SUCCESS.getCode(), "住户删除成功");
+			respBody.add(RespCodeEnum.SUCCESS.getCode(), "住户销毁成功");
 		} catch (Exception ex) {
-			respBody.add(RespCodeEnum.ERROR.getCode(), "住户删除失败");
-			LogUtils.error("住户删除失败！",ex);
+			respBody.add(RespCodeEnum.ERROR.getCode(), "住户销毁失败");
+			LogUtils.error("住户销毁失败！",ex);
 		}
 		return respBody;
 	}

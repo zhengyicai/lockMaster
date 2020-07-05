@@ -50,7 +50,7 @@ public interface ResidentService {
 	 * @return 集合
 	 * @throws Exception
 	 */
-	public List<UseResidentVo> residentList(Paging paging, String criteria) throws Exception;
+	public List<UseResidentVo> residentList(Paging paging, String criteria,String communityId) throws Exception;
 
 	/**
 	 * 总记录数  2018-11-20  1.0.0
@@ -58,7 +58,7 @@ public interface ResidentService {
 	 * @return 总记录数
 	 * @throws Exception
 	 */
-	public long residentCount(String criteria) throws Exception;
+	public long residentCount(String criteria,String communityId) throws Exception;
 
 	/**
 	 * 新增住户

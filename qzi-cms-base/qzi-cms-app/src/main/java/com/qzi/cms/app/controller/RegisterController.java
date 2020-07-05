@@ -304,13 +304,19 @@ public class RegisterController {
 		}else{
 			 UseResidentPo useResidentPo =  useResidentMapper.findMobile(residentVo.getMobile());
 
-			 useResidentPo.setName(residentVo.getName());
-			 useResidentMapper.updateByPrimaryKey(useResidentPo);
+
 
 			 if(useResidentPo==null){
-				 respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号尚未注册,请联系物业");
+				 respBody.add(RespCodeEnum.ERROR.getCode(), "该手机号尚未注册,请先绑定租户");
 			 }else{
-				 respBody.add(RespCodeEnum.SUCCESS.getCode(), "绑定成功");
+
+			 	if("30".equals(useResidentPo.getState())){
+					respBody.add(RespCodeEnum.ERROR.getCode(), "请等待管理员后再绑定",useResidentPo);
+				}
+
+				 useResidentPo.setRemark(residentVo.getName());
+				 useResidentMapper.updateByPrimaryKey(useResidentPo);
+				 respBody.add(RespCodeEnum.SUCCESS.getCode(), "绑定成功",useResidentPo);
 			 }
 
 

@@ -80,17 +80,17 @@ public class ResidentServiceImpl implements ResidentService {
 	}
 
 	@Override
-	public List<UseResidentVo> residentList(Paging paging, String criteria) throws Exception {
+	public List<UseResidentVo> residentList(Paging paging, String criteria, String communityId) throws Exception {
 		//读取用户信息
 		SysUserVo userVo = commonService.findUser();
 		//分页对象
 		RowBounds rwoBounds = new RowBounds(paging.getPageNumber(),paging.getPageSize());
-		return residentMapper.residentList(rwoBounds,criteria);
+		return residentMapper.residentList(rwoBounds,criteria,communityId);
 	}
 
 	@Override
-	public long residentCount(String criteria) throws Exception {
-		return residentMapper.residentCount(criteria);
+	public long residentCount(String criteria,String communityId) throws Exception {
+		return residentMapper.residentCount(criteria,communityId);
 	}
 
 
@@ -168,7 +168,7 @@ public class ResidentServiceImpl implements ResidentService {
 //		client.setUserId(residentVo.getMobile());
 //		clientUtils.deleteClient(client);
 		//删除住户授权
-		residentMapper.delAuthResidentId(residentVo.getId());
+		residentMapper.delEquResidentId(residentVo.getId());
 		//删除住户
 		residentMapper.delResident(residentVo.getId());
 		//communityResidentMapper.deleteByCriteria(residentVo.getId(),residentVo.getCommunityId());

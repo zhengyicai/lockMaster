@@ -4,39 +4,35 @@
 <mapper namespace="com.qzi.cms.server.mapper.UseLockRecordMapper">
     <!-- 注册界面获取小区数据 -->
     <select id="findAll" resultType="UseLockRecordVo" parameterType="UseLockRecordVo">
-        SELECT r.*,c.communityName as communityName, re.mobile as mobile,us.mobile as mobile1  from use_lock_record  r left join   use_community  c on  c.id = r.communityId
-        left join use_resident re on re.id = r.userId left join sys_user us on us.id = r.userId
-
+        select re.*,ue.equipmentName  as equipmentName from use_lock_record re left join use_equipment  ue
+        on re.equipmentId = ue.id
         <where>
             1=1
-            <if test="model.mobile != null and model.mobile !=''">
-                and (re.mobile = #{model.mobile} or us.mobile = #{model.mobile})
+            <if test="model.phone != null and model.phone !=''">
+                and re.phone = #{model.phone}
 
             </if>
-            <if test="model.userId != null and model.userId !=''">
-                and r.userId = #{model.userId}
-            </if>
+
             <if test="model.communityId != null and model.communityId !=''">
-                and r.communityId = #{model.communityId}
+                and re.communityId = #{model.communityId}
             </if>
         </where>
-        order by r.createTime desc
+        order by re.createTime desc
         limit #{startRow}, #{pageSize};
     </select>
 
     <select id="findCount" resultType="long" parameterType="UseLockRecordVo">
-        SELECT count(1) from use_lock_record  r left join   use_community  c on  c.id = r.communityId
-        left join use_resident re on re.id = r.userId left join sys_user us on us.id = r.userId
+        select count(1) from use_lock_record re left join use_equipment  ue
+        on re.equipmentId = ue.id
         <where>
             1=1
-            <if test="model.mobile != null and model.mobile !=''">
-                and (re.mobile = #{model.mobile} or us.mobile = #{model.mobile})
+            <if test="model.phone != null and model.phone !=''">
+                and re.phone = #{model.phone}
+
             </if>
-            <if test="model.userId != null and model.userId !=''">
-                and r.userId = #{model.userId}
-            </if>
+
             <if test="model.communityId != null and model.communityId !=''">
-                and r.communityId = #{model.communityId}
+                and re.communityId = #{model.communityId}
             </if>
         </where>
     </select>

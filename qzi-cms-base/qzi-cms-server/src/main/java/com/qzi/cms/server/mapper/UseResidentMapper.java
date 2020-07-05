@@ -51,7 +51,7 @@ public interface UseResidentMapper  extends BaseMapper<UseResidentPo>{
 	 * @param id
 	 * @return
 	 */
-	public List<UseResidentVo> residentList(RowBounds rwoBounds,@Param("criteria") String criteria);
+	public List<UseResidentVo> residentList(RowBounds rwoBounds,@Param("criteria") String criteria,@Param("communityId") String communityId);
 
 
 	/**
@@ -59,7 +59,7 @@ public interface UseResidentMapper  extends BaseMapper<UseResidentPo>{
 	 * @param id
 	 * @return
 	 */
-	public long residentCount(@Param("criteria") String criteria);
+	public long residentCount(@Param("criteria") String criteria,@Param("communityId") String communityId);
 
 	/**
 	 * @param rwoBounds
@@ -100,6 +100,10 @@ public interface UseResidentMapper  extends BaseMapper<UseResidentPo>{
 	@Delete("DELETE FROM use_resident_room WHERE residentId = #{id}")
 	public void delAuthResidentId(@Param("id") String id);
 
+
+	@Delete("DELETE FROM use_resident_equipment WHERE residentId = #{id}")
+	public void delEquResidentId(@Param("id") String id);
+
 	/**
 	 * 修改授权
 	 */
@@ -129,12 +133,33 @@ public interface UseResidentMapper  extends BaseMapper<UseResidentPo>{
 	 * @param loginName
 	 * @return
 	 */
-	@Select("select * from use_resident where mobile=#{mobile}")
+	@Select("select * from use_resident where mobile=#{mobile} limit 1")
 	public UseResidentPo findMobile(@Param("mobile") String loginName);
+
+
+
+	@Select("select * from use_resident where mobile=#{mobile} and id = #{id}")
+	public UseResidentPo findMobileId(@Param("mobile") String mobile,@Param("id") String id);
+
+	@Select("select ur.*,uc.communityName,ue.equId,ue.equCode from use_resident ur left join use_community  uc on ur.communityId = uc.id left join use_equipment ue on ur.equipmentId = ue.id where ur.state='10' and ur.mobile=#{mobile}")
+	public List<UseResidentVo> findMobileList(@Param("mobile") String mobile);
+
+
+
+	@Update("update use_resident set identityNo=REPLACE (identityNo,#{old1},#{new1}) where communityId=#{communityId}")
+	public void updateNameAll(@Param("communityId") String  communityId,@Param("old1") String  old1,@Param("new1") String  new1);
+
+
+	@Select("select ur.*,uc.communityName,ue.equId,ue.equCode from use_resident ur left join use_community  uc on ur.communityId = uc.id left join use_equipment ue on ur.equipmentId = ue.id where ur.state='10' and ur.id=#{id}")
+	public UseResidentVo findResidentId(@Param("id") String id);
 
 
 	@Select("select  c.* from  use_resident r left join use_community c on c.id = r.communityId where r.mobile=#{mobile}")
 	public UseCommunityPo  findCommunity(@Param("mobile") String mobile);
+
+
+	@Select("select  c.* from  use_resident r left join use_community c on c.id = r.communityId where r.id=#{id}")
+	public UseCommunityPo  findCommunitys(@Param("id") String id);
 
 
 	@Select("select * from use_resident where wxId=#{wxId} limit 1")

@@ -200,6 +200,8 @@ public class UserServiceImpl implements UserService {
 		userPo.setRoleName(userVo.getRoleName());
 		userPo.setState(userVo.getState());
 		userPo.setRemark(userVo.getRemark());
+		String newPw = CryptUtils.hmacSHA1Encrypt(userVo.getPassword(), userPo.getSalt());
+		userPo.setPassword(newPw);
 		userMapper.updateByPrimaryKey(userPo);
 	}
 

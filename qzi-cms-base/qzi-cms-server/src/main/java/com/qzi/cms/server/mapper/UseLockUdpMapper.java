@@ -35,6 +35,14 @@ public interface UseLockUdpMapper extends BaseMapper<UseLockUdpPo>{
 	public void updateStatus(@Param("phone") String phone,@Param("roomNumber") String roomNumber);
 
 
+	@Update("update use_lock_udp set state='10' where  id=#{id}")
+	public void updateStatusOne(@Param("id") String id);
+
+	@Select("select * from  use_lock_udp where id=#{id}")
+	public  UseLockUdpPo findId(@Param("id") String id);
+
+
+
 	@Select("select * from  use_lock_udp where phone=#{phone} and roomNumber=#{roomNumber} and equipmentId=#{equipmentId} order by createTime desc limit 1")
 	public  UseLockUdpPo findOne(@Param("phone") String phone,@Param("roomNumber") String roomNumber,@Param("equipmentId") String equipmentId);
 

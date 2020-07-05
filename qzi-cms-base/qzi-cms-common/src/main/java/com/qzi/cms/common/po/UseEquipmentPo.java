@@ -102,7 +102,25 @@ public class UseEquipmentPo {
 	private String gate;
 	private String mask;
 	private String ename;
+	private String top1;
 
+	private String timestrap;
+
+	public String getTimestrap() {
+		return timestrap;
+	}
+
+	public void setTimestrap(String timestrap) {
+		this.timestrap = timestrap;
+	}
+
+	public String getTop1() {
+		return top1;
+	}
+
+	public void setTop1(String top1) {
+		this.top1 = top1;
+	}
 
 	public String getIp() {
 		return ip;

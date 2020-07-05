@@ -85,6 +85,12 @@ public class UseResidentVo {
 	private String remark;
 	private String unitId;
 
+	private String equId;
+
+	private  String equCode;
+
+
+
 
 	/**
 	 * 原密码
@@ -143,6 +149,21 @@ public class UseResidentVo {
 	private String equipmentId;
 	private String unitNo;
 
+	public String getEquCode() {
+		return equCode;
+	}
+
+	public void setEquCode(String equCode) {
+		this.equCode = equCode;
+	}
+
+	public String getEquId() {
+		return equId;
+	}
+
+	public void setEquId(String equId) {
+		this.equId = equId;
+	}
 
 	public String getEquipmentId() {
 		return equipmentId;

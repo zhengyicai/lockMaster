@@ -11,6 +11,7 @@
 				<bind name="pun" value="'%'+_parameter.criteria+'%'"/>
 				and (ur.name like #{pun} or ur.mobile like #{pun})
 			</if>
+
 		</where>
 		order by createTime desc
 	</select>
@@ -23,6 +24,7 @@
 				<bind name="pun" value="'%'+_parameter.criteria+'%'"/>
 				and (ur.name like #{pun} or ur.mobile like #{pun})
 			</if>
+
 		</where>
 	</select>
 
@@ -31,15 +33,18 @@
 
 	<!-- 条件分页查询   用户管理-->
 	<select id="residentList" resultType="UseResidentVo" parameterType="String">
-		SELECT ur.*  from use_resident ur
+		SELECT ur.*,uq.equId   from use_resident ur  left join  use_equipment uq on ur.equipmentId = uq.id
 		<where>
 
 			<if test="criteria != null and criteria !=''">
 				<bind name="pun" value="'%'+_parameter.criteria+'%'"/>
 				and (ur.name like #{pun} or ur.mobile like #{pun})
 			</if>
+			<if test="communityId != null and communityId !=''">
+				and ur.communityId=#{communityId}
+			</if>
 		</where>
-		order by createTime desc
+		order by ur.createTime desc
 	</select>
 
 	<select id="residentCount" resultType="long" parameterType="String">
@@ -49,6 +54,9 @@
 			<if test="criteria != null and criteria !=''">
 				<bind name="pun" value="'%'+_parameter.criteria+'%'"/>
 				and (ur.name like #{pun} or ur.mobile like #{pun})
+			</if>
+			<if test="communityId != null and communityId !=''">
+				and ur.communityId=#{communityId}
 			</if>
 		</where>
 	</select>

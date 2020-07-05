@@ -10,11 +10,14 @@ package com.qzi.cms.web.controller;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
+import com.qzi.cms.common.po.UseCommunityPo;
 import com.qzi.cms.common.service.RedisService;
 import com.qzi.cms.common.util.ConfUtils;
 import com.qzi.cms.common.util.CryptUtils;
 import com.qzi.cms.common.vo.SysUserVo;
 import com.qzi.cms.common.vo.UpdatePwVo;
+import com.qzi.cms.server.mapper.UseCommunityMapper;
+import com.qzi.cms.server.mapper.UseResidentMapper;
 import com.qzi.cms.server.service.web.UserService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,7 +53,14 @@ public class CommunityAreaController {
 	private ConfUtils confUtils;
 	@Resource
 	private RedisService redisService;
-	
+
+
+	@Resource
+	private UseCommunityMapper useCommunityMapper;
+
+	@Resource
+	private UseResidentMapper useResidentMapper;
+
 	@GetMapping("/findAll")
 	public RespBody findAll(Paging paging){
 		RespBody respBody = new RespBody();
@@ -120,7 +130,23 @@ public class CommunityAreaController {
 	public RespBody update(@RequestBody UseCommunityVo communityVo){
 		RespBody respBody = new RespBody();
 		try {
+
+
+			UseCommunityPo useCommunityPo  =  useCommunityMapper.findOne(communityVo.getId());
+
+			if(useCommunityPo!=null){
+				useResidentMapper.updateNameAll(useCommunityPo.getId(),useCommunityPo.getCommunityName(),communityVo.getCommunityName());
+			}
+
 			communityService.update(communityVo);
+
+
+
+
+
+
+
+
 			respBody.add(RespCodeEnum.SUCCESS.getCode(), "住宅小区保存成功");
 		} catch (Exception ex) {
 			respBody.add(RespCodeEnum.ERROR.getCode(), "住宅小区保存失败");
