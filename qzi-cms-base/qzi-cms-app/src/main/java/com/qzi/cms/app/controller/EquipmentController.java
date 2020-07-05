@@ -1318,7 +1318,6 @@ public class EquipmentController {
        // file.transferTo(new File(path));
 
 
-
         Runtime.getRuntime().exec("chmod 777 -R " +urls);
         respBody.add(RespCodeEnum.SUCCESS.getCode(), "查找所有住户房卡数据成功", urls);
 
